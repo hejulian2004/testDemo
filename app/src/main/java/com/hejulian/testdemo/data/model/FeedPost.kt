@@ -9,6 +9,7 @@ data class FeedPost (
     val likedUsers: List<FeedUser> = emptyList(),
     val isLiked: Boolean = false,
     val createTime: Long = System.currentTimeMillis(),
+    val unreadNotificationCount: Int = 0
 ) {
     val likesCount: Int get() = likedUsers.size
     val commentsCount: Int get() = commentsList.size
