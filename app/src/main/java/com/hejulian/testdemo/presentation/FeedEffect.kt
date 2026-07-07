@@ -1,0 +1,15 @@
+package com.hejulian.testdemo.presentation
+
+sealed interface FeedEffect{
+    data class ShowMessage(
+        val message: String
+    ): FeedEffect
+
+    data class OpenComment(
+        val postId: String
+    ): FeedEffect
+
+    data class OpenMoreMenu(
+        val postId: String
+    ): FeedEffect
+}

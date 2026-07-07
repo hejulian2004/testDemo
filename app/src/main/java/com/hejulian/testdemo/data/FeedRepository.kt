@@ -16,7 +16,7 @@ interface FeedRepository {
     suspend fun likePost(
         postId: String,
         user: FeedUser
-    )
+    ): String
 
     suspend fun getLikedUsers(
         postId: String
@@ -25,13 +25,13 @@ interface FeedRepository {
     suspend fun unlikePost(
         postId: String,
         user: FeedUser
-    )
+    ): String
 
-    suspend fun commentPost(
+    suspend fun addComment(
         postId: String,
-        user: FeedUser,
+        commentUser: FeedUser,
         content: String
-    )
+    ): String
 
     suspend fun getComments(
         postId: String
@@ -40,9 +40,10 @@ interface FeedRepository {
     suspend fun deleteComment(
         postId: String,
         commentId: String,
-    )
+    ): String
 
     suspend fun createPost(
+        user: FeedUser,
         content: String,
         mediaList: List<FeedMedia>
     )

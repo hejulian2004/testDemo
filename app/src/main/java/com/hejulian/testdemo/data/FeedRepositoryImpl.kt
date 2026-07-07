@@ -1,0 +1,165 @@
+package com.hejulian.testdemo.data
+
+import com.hejulian.testdemo.data.model.FeedComment
+import com.hejulian.testdemo.data.model.FeedMedia
+import com.hejulian.testdemo.data.model.FeedPost
+import com.hejulian.testdemo.data.model.FeedUser
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import java.util.ListResourceBundle
+import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
+
+class FeedRepositoryImpl : FeedRepository{
+    private val _feedPosts = MutableStateFlow<List<FeedPost>>(emptyList())
+
+    override fun getFeedPosts(): Flow<List<FeedPost>> {
+        return _feedPosts
+    }
+
+    override fun getFeedPost(postId: String): Flow<FeedPost?> {
+        return _feedPosts.map{ posts ->
+            posts.find { it.id == postId }
+        }
+    }
+
+    override suspend fun refreshFeed() {
+        delay(1000.milliseconds)
+        if(_feedPosts.value.isEmpty()){
+            _feedPosts.value = createFakeData()
+        }
+    }
+
+    override suspend fun likePost(
+        postId: String,
+        user: FeedUser
+    ): String {
+        val post = _feedPosts.value.find { it.id == postId }
+        if( post == null){
+            return "点赞失败，找不到该帖子"
+        }
+        _feedPosts.update { posts ->
+            posts.map{
+                if(it.id == postId){
+                    it.copy(isLiked = true)
+                } else it
+            }
+        }
+        return "点赞成功"
+    }
+
+    override suspend fun getLikedUsers(postId: String): List<FeedUser> {
+        val post = _feedPosts.value.find { it.id == postId }
+        return post?.likedUsers ?: emptyList()
+    }
+
+    override suspend fun unlikePost(
+        postId: String,
+        user: FeedUser
+    ): String {
+        val post = _feedPosts.value.find { it.id == postId }
+        if( post == null){
+            return "取消点赞失败，找不到该帖子"
+        }
+        _feedPosts.update { posts ->
+            posts.map{
+                if(it.id == postId){
+                    it.copy(isLiked = false)
+                } else it
+            }
+        }
+        return "取消点赞成功"
+    }
+
+    override suspend fun addComment(
+        postId: String,
+        commentUser: FeedUser,
+        content: String
+    ): String {
+        val newComment = createFakeComment(
+            postId = postId,
+            commentUser = commentUser,
+            content = content
+        ).copy()
+        _feedPosts.update { posts ->
+            posts.map {
+                if(it.id == postId){
+                    it.copy(commentsList = it.commentsList+newComment)
+                } else it
+            }
+        }
+        return "评论发布成功"
+    }
+
+    override suspend fun getComments(postId: String): List<FeedComment> {
+        return _feedPosts.value.find { it.id == postId }?.commentsList ?: emptyList()
+    }
+
+    override suspend fun deleteComment(postId: String, commentId: String): String {
+        _feedPosts.update { posts ->
+            posts.map { post ->
+                if(post.id == postId){
+                    post.copy(commentsList = post.commentsList.filter { it.id!=commentId })
+                }else post
+            }
+        }
+        return "评论删除成功"
+    }
+
+    override suspend fun createPost(
+        user: FeedUser,
+        content: String,
+        mediaList: List<FeedMedia>
+    ) {
+        val newPost = createFakePost(user).copy()
+        _feedPosts.update { posts ->
+            posts + newPost
+        }
+    }
+
+    override suspend fun deletePost(postId: String) {
+        _feedPosts.update { posts ->
+            posts.filterNot { it.id == postId }
+        }
+    }
+
+    override suspend fun updatePost(
+        postId: String,
+        content: String,
+        mediaList: List<FeedMedia>
+    ) {
+        _feedPosts.update { posts ->
+            posts.map { post ->
+                if (post.id == postId) {
+                    post.copy(content = content, mediaList = mediaList)
+                } else post
+            }
+        }
+    }
+
+}
+
+private fun createFakeData(): List<FeedPost>{
+    return emptyList()
+}
+
+private fun createFakeComment(postId : String, commentUser: FeedUser, content: String): FeedComment{
+    return FeedComment(
+        id = UUID.randomUUID().toString(),
+        postId = postId,
+        commentUser = commentUser,
+        content = "这是一条模拟评论"+ System.currentTimeMillis()
+    )
+}
+
+
+private fun createFakePost(user: FeedUser): FeedPost{
+    return FeedPost(
+        id = UUID.randomUUID().toString(),
+        postUser = user,
+        content = "这是一个测试内容"+ System.currentTimeMillis()
+    )
+}

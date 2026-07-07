@@ -1,7 +1,7 @@
 package com.hejulian.testdemo.data.model
 
 data class FeedPost (
-    val id: Int,
+    val id: String,
     val postUser: FeedUser,
     val content: String,
     val mediaList: List<FeedMedia> = emptyList(),
