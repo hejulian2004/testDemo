@@ -29,6 +29,7 @@ fun FeedPostItem(
     onDeleteCommentClick: () -> Unit,//删除评论
     onOpenMoreMenuClick: () -> Unit,//更多按钮
     onDeletePostClick: () -> Unit,//删除按钮
+    currentTime: Long
 ) {
     Row(
         modifier = Modifier
@@ -68,10 +69,11 @@ fun FeedPostItem(
             FeedActionBar(
                 post = post,
                 currentUser = currentUser,
-                onOpenMOreMenuClick = onOpenMoreMenuClick,
+                onOpenMoreMenuClick = onOpenMoreMenuClick,
                 onLikeClick = onLikeClick,
                 onAddCommentClick = onAddCommentClick,
                 onDeletePostClick = onDeletePostClick,
+                currentTime = currentTime,
             )
 
         }
@@ -103,5 +105,6 @@ fun FeedPostItemPreview(){
         onDeleteCommentClick =  {  },
         onOpenMoreMenuClick =  {  },
         onDeletePostClick =  {  },
+        currentTime = System.currentTimeMillis()
     )
 }

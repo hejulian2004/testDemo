@@ -21,7 +21,7 @@ fun BottomSheet(
             .padding(bottom = 32.dp)
     ) {
         BottomSheetItem(
-            text = "拍摄",
+            text = "拍摄（照片或视频）",
             onClick = {
                 onShootClick()
             }

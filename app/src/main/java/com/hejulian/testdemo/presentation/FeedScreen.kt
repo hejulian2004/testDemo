@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,6 +47,8 @@ import com.hejulian.testdemo.presentation.components.BottomSheetItem
 import com.hejulian.testdemo.presentation.components.FeedPostItem
 import com.hejulian.testdemo.presentation.components.FeedTopBar
 import com.hejulian.testdemo.presentation.components.TextPublishScreen
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,6 +71,17 @@ fun FeedScreen(
 
     var showTextPublish by remember {
         mutableStateOf(false)
+    }
+
+    var currentTime by remember {
+        mutableLongStateOf(System.currentTimeMillis())
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentTime = System.currentTimeMillis()
+            delay((60 * 1000L).milliseconds)
+        }
     }
 
     LaunchedEffect(Unit){
@@ -145,7 +159,8 @@ fun FeedScreen(
                         },
                         onDeletePostClick = {
 
-                        }
+                        },
+                        currentTime = currentTime,
                     )
                     HorizontalDivider(
                         thickness = 0.5.dp,
