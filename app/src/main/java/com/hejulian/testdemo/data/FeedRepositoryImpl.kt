@@ -28,9 +28,7 @@ class FeedRepositoryImpl : FeedRepository{
 
     override suspend fun refreshFeed() {
         delay(1000.milliseconds)
-        if(_feedPosts.value.isEmpty()){
-            _feedPosts.value = createFakeData()
-        }
+        _feedPosts.value = createFakeData()
     }
 
     override suspend fun likePost(
@@ -142,8 +140,17 @@ class FeedRepositoryImpl : FeedRepository{
 
 }
 
-private fun createFakeData(): List<FeedPost>{
-    return emptyList()
+private fun createFakeData(): List<FeedPost> {
+    val uuid = "1"
+    val user = FeedUser(id = uuid, name = "何聚敛", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())
+    return listOf(
+        createFakePost(user),
+        createFakePost(user.copy(name = "何聚敛2", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())),
+        createFakePost(user.copy(name = "何聚敛3", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())),
+        createFakePost(user.copy(name = "何聚敛4", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())),
+        createFakePost(user.copy(name = "何聚敛5", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())),
+        createFakePost(user.copy(name = "何聚敛6", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())),
+    )
 }
 
 private fun createFakeComment(postId : String, commentUser: FeedUser, content: String): FeedComment{
@@ -160,6 +167,6 @@ private fun createFakePost(user: FeedUser): FeedPost{
     return FeedPost(
         id = UUID.randomUUID().toString(),
         postUser = user,
-        content = "这是一个测试内容"+ System.currentTimeMillis()
+        content = "这是一个测试内容-----------------------------------------------\n---\n---\n---\n"+ System.currentTimeMillis()
     )
 }

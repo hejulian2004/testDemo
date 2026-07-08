@@ -11,36 +11,36 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.hejulian.testdemo.data.FeedRepositoryImpl
+import com.hejulian.testdemo.data.model.FeedUser
+import com.hejulian.testdemo.presentation.FeedScreen
+import com.hejulian.testdemo.presentation.FeedViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-//            TestdemoTheme {
-//                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-//                    Greeting(
-//                        name = "Android",
-//                        modifier = Modifier.padding(innerPadding)
-//                    )
-//                }
-//            }
+            val feedViewModel: FeedViewModel = viewModel{
+                FeedViewModel(
+                    feedRepository = FeedRepositoryImpl(),
+                    currentUser = FeedUser(id = "1", name="何聚敛", avatarUrl = "https://i.pravatar.cc/30")
+                )
+            }
+            FeedScreen(feedViewModel)
         }
     }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-//    TestdemoTheme {
-//        Greeting("Android")
-//    }
+    val feedViewModel: FeedViewModel = viewModel{
+        FeedViewModel(
+            feedRepository = FeedRepositoryImpl(),
+            currentUser = FeedUser(id = "1", name="何聚敛", avatarUrl = "https://i.pravatar.cc/30")
+        )
+    }
+    FeedScreen(feedViewModel)
 }

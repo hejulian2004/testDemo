@@ -1,15 +1,29 @@
 package com.hejulian.testdemo.presentation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,16 +33,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
-import coil3.compose.AsyncImagePainter
-import com.hejulian.testdemo.data.FeedRepository
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.hejulian.testdemo.data.FeedRepositoryImpl
 import com.hejulian.testdemo.data.model.FeedUser
+import com.hejulian.testdemo.presentation.components.BottomSheet
+import com.hejulian.testdemo.presentation.components.BottomSheetItem
 import com.hejulian.testdemo.presentation.components.FeedPostItem
 import com.hejulian.testdemo.presentation.components.FeedTopBar
-import java.util.UUID
+import com.hejulian.testdemo.presentation.components.TextPublishScreen
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FeedScreen(
     viewModel: FeedViewModel
@@ -38,12 +57,17 @@ fun FeedScreen(
         SnackbarHostState()
     }
 
-    var showCreateDialog by remember{
+    var showBottomSheet by remember{
         mutableStateOf(false)
     }
+    val bottomSheetState = rememberModalBottomSheetState()
 
     var commentPostId by remember{
         mutableStateOf<String?>(null)
+    }
+
+    var showTextPublish by remember {
+        mutableStateOf(false)
     }
 
     LaunchedEffect(Unit){
@@ -68,16 +92,20 @@ fun FeedScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             FeedTopBar(
-                onRefresh = {
-                    viewModel.handelIntent(FeedIntent.Refresh)
+                onShortClickCreatePost = {
+                    showBottomSheet = true
                 },
-                onCreatePost = {
-                    showCreateDialog = true
+                onLongClickCreatePost = {
+                    showTextPublish = true
                 }
             )
         }
     ) { innerPadding ->
-        Box(
+        PullToRefreshBox(
+            isRefreshing = uiState.isLoading,
+            onRefresh = {
+                viewModel.handelIntent(FeedIntent.Refresh)
+            },
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
@@ -85,16 +113,6 @@ fun FeedScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
-                if(uiState.isLoading&&uiState.posts.isEmpty()){
-                    item {
-                        Box(
-                            modifier = Modifier.fillParentMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ){
-                            CircularProgressIndicator()
-                        }
-                    }
-                }
                 if(!uiState.isLoading&&uiState.posts.isEmpty()){
                     item {
                         Box(
@@ -129,10 +147,58 @@ fun FeedScreen(
 
                         }
                     )
+                    HorizontalDivider(
+                        thickness = 0.5.dp,
+                        color = Color.LightGray
+                    )
+                }
+            }
+
+            if(showBottomSheet){
+                ModalBottomSheet(
+                    onDismissRequest = {showBottomSheet = false},
+                    sheetState = bottomSheetState,
+                    dragHandle = {
+                        BottomSheetDefaults.DragHandle()
+                    }
+                ) {
+                    BottomSheet(
+                        onShootClick = {
+
+                        },
+                        onChooseClick = {
+
+                        },
+                        onCancelClick = {
+                            showBottomSheet = false
+                        }
+                    )
                 }
             }
         }
 
+    }
+
+    AnimatedVisibility(
+        visible = showTextPublish,
+        enter = slideInVertically(initialOffsetY = {it}),
+        exit = slideOutVertically(targetOffsetY = {it})
+    ) {
+        TextPublishScreen(
+            onCancelClick = {
+                showTextPublish = false
+            },
+            onPostClick = { textContent ->
+                viewModel.handelIntent(
+                    FeedIntent.CreatePost(
+                        user = uiState.currentUser,
+                        content = textContent,
+                        mediaList = emptyList()
+                    )
+                )
+                showTextPublish = false
+            }
+        )
     }
 }
 
@@ -141,7 +207,7 @@ fun FeedScreen(
 fun FeedScreenPreview(){
     val repository = FeedRepositoryImpl()
     val user = FeedUser(
-        id = UUID.randomUUID().toString(),
+        id = "1",
         name = "何聚敛",
         avatarUrl = ""
     )

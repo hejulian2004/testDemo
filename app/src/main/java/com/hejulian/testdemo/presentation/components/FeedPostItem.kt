@@ -57,8 +57,9 @@ fun FeedPostItem(
 
                 Text(
                     text = post.content,
-                    fontWeight = FontWeight.Thin,
-                    fontSize = 17.sp
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 17.sp,
+                    color = Color.Black
                 )
             }
 

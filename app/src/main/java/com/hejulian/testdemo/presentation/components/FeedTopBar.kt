@@ -1,48 +1,68 @@
 package com.hejulian.testdemo.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun FeedTopBar (
-    onRefresh: () -> Unit,
-    onCreatePost: () -> Unit,
+    onShortClickCreatePost: () -> Unit,
+    onLongClickCreatePost: () -> Unit
 ){
-    Row(
+    Box(
         modifier = Modifier
+            .statusBarsPadding()//避开顶部系统信息栏
             .fillMaxWidth()
             .background(color = Color.White)
             .height(56.dp)
             .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        contentAlignment = Alignment.Center
     ) {
-        Text(text = "朋友圈")
+        Text(
+            text = "朋友圈",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        TextButton(
-            onClick = onRefresh
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "刷新")
-        }
-
-        TextButton(
-            onClick = onCreatePost
-        ) {
-            Text("发布")
+            Icon(
+                imageVector = Icons.Default.CameraAlt,
+                tint = Color.Black,
+                contentDescription = "发布",
+                modifier = Modifier
+                    .combinedClickable(
+                        onClick = {
+                            onShortClickCreatePost()
+                        },
+                        onLongClick = {
+                            onLongClickCreatePost()
+                        }
+                    ).size(25.dp)
+            )
         }
     }
 }
@@ -51,7 +71,7 @@ fun FeedTopBar (
 @Composable
 fun FeedTopBarPreview(){
     FeedTopBar(
-        onRefresh = {},
-        onCreatePost = {}
+        onShortClickCreatePost = {},
+        onLongClickCreatePost = {}
     )
 }

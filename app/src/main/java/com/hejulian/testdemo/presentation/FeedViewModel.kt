@@ -137,6 +137,7 @@ class FeedViewModel(
                     _effect.emit(FeedEffect.ShowMessage("刷新成功"))
                 }
             }.onFailure {
+                _uiState.update { it.copy(isLoading = false) }
                 _effect.emit(FeedEffect.ShowMessage("刷新失败"))
             }
         }
