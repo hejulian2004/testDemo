@@ -208,6 +208,21 @@ private fun createFakePost(user: FeedUser): FeedPost{
             id = "66",
             name = "王五2",
             avatarUrl = "https://i.pravatar.cc/300?img=6"
+        ),
+        FeedUser(
+            id = "77",
+            name = "张三3",
+            avatarUrl = "https://i.pravatar.cc/300?img=7"
+        ),
+        FeedUser(
+            id = "88",
+            name = "李四4",
+            avatarUrl = "https://i.pravatar.cc/300?img=8"
+        ),
+        FeedUser(
+            id = "99",
+            name = "王五5",
+            avatarUrl = "https://i.pravatar.cc/300?img=9"
         )
     )
     val postId =  UUID.randomUUID().toString()
