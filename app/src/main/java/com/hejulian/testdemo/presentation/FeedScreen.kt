@@ -1,27 +1,25 @@
 package com.hejulian.testdemo.presentation
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -34,20 +32,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.hejulian.testdemo.data.FeedRepositoryImpl
 import com.hejulian.testdemo.data.model.FeedUser
 import com.hejulian.testdemo.presentation.components.BottomSheet
-import com.hejulian.testdemo.presentation.components.BottomSheetItem
 import com.hejulian.testdemo.presentation.components.FeedPostItem
 import com.hejulian.testdemo.presentation.components.FeedTopBar
 import com.hejulian.testdemo.presentation.components.TextPublishScreen
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,16 +52,26 @@ fun FeedScreen(
     viewModel: FeedViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
     val snackbarHostState = remember{
         SnackbarHostState()
+    }
+
+    var snackbarJob by remember {
+        mutableStateOf<Job?>(null)
     }
 
     var showBottomSheet by remember{
         mutableStateOf(false)
     }
+
     val bottomSheetState = rememberModalBottomSheetState()
 
     var commentPostId by remember{
+        mutableStateOf<String?>(null)
+    }
+
+    var commentContent by remember {
         mutableStateOf<String?>(null)
     }
 
@@ -75,6 +81,10 @@ fun FeedScreen(
 
     var currentTime by remember {
         mutableLongStateOf(System.currentTimeMillis())
+    }
+
+    var pendingDeletePostId by remember {
+        mutableStateOf<String?>(null)
     }
 
     LaunchedEffect(Unit) {
@@ -88,7 +98,15 @@ fun FeedScreen(
         viewModel.effect.collect {effect ->
             when(effect){
                 is FeedEffect.ShowMessage ->{
-                    snackbarHostState.showSnackbar(effect.message)
+                    snackbarJob?.cancel()
+                    snackbarHostState.currentSnackbarData?.dismiss()
+
+                    snackbarJob = launch {
+                        snackbarHostState.showSnackbar(
+                            message = effect.message,
+                            duration = SnackbarDuration.Short
+                        )
+                    }
                 }
 
                 is FeedEffect.OpenMoreMenu ->{
@@ -145,20 +163,24 @@ fun FeedScreen(
                     FeedPostItem(
                         post = post,
                         currentUser = uiState.currentUser,
+                        onClick = {viewModel.handelIntent(FeedIntent.ShowMessage("item被点击了"))},
+                        onNameClick = {viewModel.handelIntent(FeedIntent.ShowMessage(post.postUser.name))},
                         onLikeClick = {
-
+                            if(!post.isLiked)viewModel.handelIntent(FeedIntent.LikePost(post.id, uiState.currentUser))
+                            else viewModel.handelIntent(FeedIntent.UnlikePost(post.id, uiState.currentUser))
                         },
                         onAddCommentClick = {
-
+                            commentPostId = post.id
+                            commentContent = ""
                         },
                         onDeleteCommentClick = {
 
                         },
-                        onOpenMoreMenuClick = {
-
-                        },
                         onDeletePostClick = {
-
+                            pendingDeletePostId = post.id
+                        },
+                        onAvatarClick = {
+                            viewModel.handelIntent(FeedIntent.ShowMessage(post.postUser.toString()))
                         },
                         currentTime = currentTime,
                     )
@@ -189,6 +211,50 @@ fun FeedScreen(
                         }
                     )
                 }
+            }
+
+            //删除自己的帖子
+            if (pendingDeletePostId != null) {
+                AlertDialog(
+                    onDismissRequest = {
+                        pendingDeletePostId = null
+                    },
+                    title = {
+                        Text(text = "确认删除")
+                    },
+                    text = {
+                        Text(text = "确定要删除这条动态吗？删除后不可恢复。")
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                val postId = pendingDeletePostId
+                                if (postId != null) {
+                                    viewModel.handelIntent(
+                                        FeedIntent.DeletePost(
+                                            postId = postId
+                                        )
+                                    )
+                                }
+                                pendingDeletePostId = null
+                            }
+                        ) {
+                            Text(
+                                text = "删除",
+                                color = Color.Red
+                            )
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                pendingDeletePostId = null
+                            }
+                        ) {
+                            Text(text = "取消")
+                        }
+                    }
+                )
             }
         }
 

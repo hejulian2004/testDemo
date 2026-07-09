@@ -16,14 +16,18 @@ import coil3.compose.AsyncImage
 @Composable
 fun Avatar(
     url: String,
-    size: Dp
+    size: Dp,
+    onClick: () -> Unit
 ){
     Surface(
         modifier = Modifier
             .size(size)
             .clip(CircleShape),
         shape = CircleShape,
-        color = Color.Gray
+        color = Color.Gray,
+        onClick = {
+            onClick()
+        }
     ) {
         AsyncImage(
             model = url,

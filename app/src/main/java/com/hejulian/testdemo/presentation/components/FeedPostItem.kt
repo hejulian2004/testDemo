@@ -1,6 +1,7 @@
 package com.hejulian.testdemo.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,11 +26,13 @@ import java.util.UUID
 fun FeedPostItem(
     post: FeedPost,
     currentUser: FeedUser,
+    onClick: () -> Unit,//整体被点击
+    onNameClick: () -> Unit,//名字被点击
     onLikeClick: () -> Unit,//点赞
     onAddCommentClick: () -> Unit,//添加评论
     onDeleteCommentClick: () -> Unit,//删除评论
-    onOpenMoreMenuClick: () -> Unit,//更多按钮
     onDeletePostClick: () -> Unit,//删除按钮
+    onAvatarClick:() -> Unit,
     currentTime: Long
 ) {
     Row(
@@ -36,10 +40,16 @@ fun FeedPostItem(
             .background(Color.White)
             .fillMaxWidth()
             .padding(12.dp)
+            .clickable{
+                onClick()
+            }
     ) {
         Avatar(
             url = post.postUser.avatarUrl,
-            size = 48.dp
+            size = 48.dp,
+            onClick = {
+                onAvatarClick()
+            }
         )
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -48,6 +58,10 @@ fun FeedPostItem(
             modifier = Modifier.weight(1f)
         ) {
             Text(
+                modifier = Modifier.
+                    clickable{
+                        onNameClick()
+                    },
                 text = post.postUser.name,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
@@ -69,11 +83,10 @@ fun FeedPostItem(
             FeedActionBar(
                 post = post,
                 currentUser = currentUser,
-                onOpenMoreMenuClick = onOpenMoreMenuClick,
                 onLikeClick = onLikeClick,
                 onAddCommentClick = onAddCommentClick,
                 onDeletePostClick = onDeletePostClick,
-                currentTime = currentTime,
+                currentTime = currentTime
             )
 
         }
@@ -100,11 +113,13 @@ fun FeedPostItemPreview(){
             name = "何聚敛",
             avatarUrl = "https://i.pravatar.cc/300"
         ),
+        onClick = {  },
+        onNameClick = {},
         onLikeClick = {  },
         onAddCommentClick =  {  },
         onDeleteCommentClick =  {  },
-        onOpenMoreMenuClick =  {  },
         onDeletePostClick =  {  },
+        onAvatarClick = {  },
         currentTime = System.currentTimeMillis()
     )
 }

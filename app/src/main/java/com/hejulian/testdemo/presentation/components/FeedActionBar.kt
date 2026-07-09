@@ -1,9 +1,18 @@
 package com.hejulian.testdemo.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -36,17 +45,17 @@ import java.util.UUID
 fun FeedActionBar(
     post: FeedPost,
     currentUser: FeedUser,
-    onOpenMoreMenuClick: () -> Unit,
     onLikeClick: () -> Unit,
     onAddCommentClick: () -> Unit,
     onDeletePostClick: () -> Unit,
     currentTime: Long
 ) {
 
-    var isShowMore by remember { mutableStateOf(true) }
+    var isShowMore by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
+            .height(25.dp)
             .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -58,56 +67,80 @@ fun FeedActionBar(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        if(isShowMore&&post.postUser.id == currentUser.id) {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "删除",
-                Modifier.size(15.dp)
-            )
-            Text(
-                modifier = Modifier
-                    .clickable {
-                        onDeletePostClick()
-                    },
-                text = "删除",
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-        }
+        AnimatedVisibility(
+            visible = isShowMore,
+            enter = expandHorizontally(
+                expandFrom = Alignment.End
+            ) + fadeIn(),
+            exit = shrinkHorizontally(
+                shrinkTowards = Alignment.End
+            ) + fadeOut()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                if(post.postUser.id == currentUser.id) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "删除",
+                            Modifier.size(15.dp)
+                        )
+                        Text(
+                            modifier = Modifier
+                                .clickable {
+                                    onDeletePostClick()
+                                },
+                            text = "删除",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                    }
+                }
 
-        if(isShowMore) {
-            Icon(
-                imageVector = Icons.Default.FavoriteBorder,
-                contentDescription = "删除",
-                Modifier.size(15.dp)
-            )
-            Text(
-                modifier = Modifier
-                    .clickable {
-                        onLikeClick()
-                    },
-                text = "点赞",
-                fontSize = 12.sp,
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-        }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Icon(
+                        imageVector =  Icons.Default.FavoriteBorder,
+                        contentDescription = "点赞",
+                        Modifier.size(15.dp),
+                        tint = if(post.isLiked) Color.Red else Color.Black
+                    )
+                    Text(
+                        modifier = Modifier
+                            .clickable {
+                                onLikeClick()
+                                isShowMore = false
+                            },
+                        text = if(post.isLiked)"取消" else "点赞",
+                        fontSize = 12.sp,
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
 
-        if(isShowMore) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Comment,
-                contentDescription = "删除",
-                Modifier.size(15.dp)
-            )
-            Text(
-                modifier = Modifier
-                    .clickable {
-                        onAddCommentClick()
-                    },
-                text = "评论",
-                fontSize = 12.sp,
-            )
-            Spacer(modifier = Modifier.width(10.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Comment,
+                        contentDescription = "评论",
+                        Modifier.size(15.dp)
+                    )
+                    Text(
+                        modifier = Modifier
+                            .clickable {
+                                onAddCommentClick()
+                            },
+                        text = "评论",
+                        fontSize = 12.sp,
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
+            }
         }
 
         if(!isShowMore){
@@ -172,7 +205,6 @@ private fun FeedActionBarPreview() {
             name = "何聚敛",
             avatarUrl = "https://i.pravatar.cc/300"
         ),
-        onOpenMoreMenuClick = { },
         onLikeClick = { },
         onAddCommentClick = { },
         onDeletePostClick = { },
