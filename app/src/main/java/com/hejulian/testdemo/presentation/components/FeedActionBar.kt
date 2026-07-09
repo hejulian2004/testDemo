@@ -7,24 +7,29 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.filled.CommentBank
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onVisibilityChanged
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,7 +61,7 @@ fun FeedActionBar(
 
     Row(
         modifier = Modifier
-            .height(25.dp)
+            .height(35.dp)
             .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -77,7 +83,13 @@ fun FeedActionBar(
             ) + fadeOut()
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .background(
+                        color = Color(0xFF333333),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                    .padding(horizontal = 16.dp)
             ){
                 if(post.postUser.id == currentUser.id) {
                     Row(
@@ -86,18 +98,26 @@ fun FeedActionBar(
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = "删除",
-                            Modifier.size(15.dp)
+                            modifier = Modifier
+                                .size(16.dp),
+                            tint = Color.White
                         )
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             modifier = Modifier
                                 .clickable {
                                     onDeletePostClick()
                                 },
                             text = "删除",
-                            fontSize = 12.sp,
-                            color = Color.Gray
+                            fontSize = 14.sp,
+                            color = Color.White
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(15.dp))
+                        VerticalDivider(
+                            thickness = 0.5.dp,
+                            color = Color.LightGray
+                        )
+                        Spacer(modifier = Modifier.width(15.dp))
                     }
                 }
 
@@ -106,10 +126,12 @@ fun FeedActionBar(
                 ){
                     Icon(
                         imageVector =  Icons.Default.FavoriteBorder,
-                        contentDescription = "点赞",
-                        Modifier.size(15.dp),
-                        tint = if(post.isLiked) Color.Red else Color.Black
+                        contentDescription = "赞",
+                        modifier = Modifier
+                            .size(16.dp),
+                        tint = if(post.isLiked) Color.Red else Color.White
                     )
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         modifier = Modifier
                             .clickable {
@@ -117,28 +139,37 @@ fun FeedActionBar(
                                 isShowMore = false
                             },
                         text = if(post.isLiked)"取消" else "点赞",
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
+                        color = Color.White
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(15.dp))
+                    VerticalDivider(
+                        thickness = 0.5.dp,
+                        color = Color.LightGray
+                    )
+                    Spacer(modifier = Modifier.width(15.dp))
                 }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ){
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Comment,
+                        //imageVector = Icons.AutoMirrored.Filled.Comment,
+                        imageVector = Icons.Default.CommentBank,
                         contentDescription = "评论",
-                        Modifier.size(15.dp)
+                        modifier = Modifier.size(16.dp),
+                        tint = Color.White
                     )
+                    Spacer(modifier = Modifier.width(15.dp))
                     Text(
                         modifier = Modifier
                             .clickable {
                                 onAddCommentClick()
                             },
                         text = "评论",
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
+                        color = Color.White
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
                 }
             }
         }
@@ -148,7 +179,7 @@ fun FeedActionBar(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                 contentDescription = "更多",
                 modifier = Modifier
-                    .clickable{
+                    .clickable {
                         isShowMore = true
                     }
                     .size(20.dp),
@@ -161,7 +192,7 @@ fun FeedActionBar(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "折叠",
                 modifier = Modifier
-                    .clickable{
+                    .clickable {
                         isShowMore = false
                     }
                     .size(20.dp),
