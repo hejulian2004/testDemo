@@ -1,6 +1,7 @@
 package com.hejulian.testdemo.presentation.components
 
 import androidx.compose.animation.core.EaseOutExpo
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,14 +42,17 @@ fun TextPublishScreen(
     Surface(
         modifier = Modifier
             .fillMaxSize()
+            .background(color = Color(0xFFF5F5F5))
             .statusBarsPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Color.White)
         ) {
             Box(
                 modifier = Modifier
+                    .background(color = Color(0xFFF5F5F5))
                     .padding(horizontal = 12.dp)
                     .height(56.dp)
                     .fillMaxWidth()
@@ -78,7 +83,8 @@ fun TextPublishScreen(
                     Text(
                         text = "发布",
                         fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = if(textContent.isEmpty()) Color.Gray else Color.Black
                     )
                 }
             }
