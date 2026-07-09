@@ -31,9 +31,9 @@ fun FeedTopBar (
 ){
     Box(
         modifier = Modifier
-            .statusBarsPadding()//避开顶部系统信息栏
             .fillMaxWidth()
-            .background(color = Color.White)
+            .background(color = Color(0xFFF5F5F5))
+            .statusBarsPadding()//避开顶部系统信息栏
             .height(56.dp)
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.Center

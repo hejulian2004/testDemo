@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import java.util.ListResourceBundle
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -87,7 +86,7 @@ class FeedRepositoryImpl : FeedRepository{
         commentUser: FeedUser,
         content: String
     ): String {
-        val newComment = createFakeComment(
+        val newComment = createComment(
             postId = postId,
             commentUser = commentUser,
             content = content
@@ -168,12 +167,12 @@ private fun createFakeData(): List<FeedPost> {
     )
 }
 
-private fun createFakeComment(postId : String, commentUser: FeedUser, content: String): FeedComment{
+private fun createComment(postId : String, commentUser: FeedUser, content: String): FeedComment{
     return FeedComment(
         id = UUID.randomUUID().toString(),
         postId = postId,
         commentUser = commentUser,
-        content = "这是一条模拟评论"+ System.currentTimeMillis()
+        content = content
     )
 }
 
@@ -211,10 +210,43 @@ private fun createFakePost(user: FeedUser): FeedPost{
             avatarUrl = "https://i.pravatar.cc/300?img=6"
         )
     )
+    val postId =  UUID.randomUUID().toString()
     return FeedPost(
-        id = UUID.randomUUID().toString(),
+        id = postId,
         postUser = user,
         content = "这是一个测试内容-----------------------------------------------\n---\n---\n---\n"+ System.currentTimeMillis(),
-        likedUsers = fakeLikedUser
+        likedUsers = fakeLikedUser,
+        commentsList = listOf(
+            FeedComment(
+                id = UUID.randomUUID().toString(),
+                postId = postId,
+                commentUser = FeedUser(
+                    id = "11",
+                    name = "张三",
+                    avatarUrl = "https://i.pravatar.cc/300?img=1"
+                ),
+                content = "这个朋友圈写得不错"
+            ),
+            FeedComment(
+                id = UUID.randomUUID().toString(),
+                postId = postId,
+                commentUser = FeedUser(
+                    id = "22",
+                    name = "李四",
+                    avatarUrl = "https://i.pravatar.cc/300?img=2"
+                ),
+                content = "这个朋友圈写得不错，这个朋友圈写得不错"
+            ),
+            FeedComment(
+                id = UUID.randomUUID().toString(),
+                postId = postId,
+                commentUser = FeedUser(
+                    id = "3",
+                    name = "王五",
+                    avatarUrl = "https://i.pravatar.cc/300?img=3"
+                ),
+                content = "这个朋友圈写得不错，这个朋友圈写得不错，这个朋友圈写得不错"
+            )
+        )
     )
 }

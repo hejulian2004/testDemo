@@ -1,0 +1,82 @@
+package com.hejulian.testdemo.presentation.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.hejulian.testdemo.data.model.FeedComment
+import com.hejulian.testdemo.data.model.FeedUser
+import java.util.UUID
+
+@Composable
+fun FeedCommentList(
+    commentsList: List<FeedComment>,
+    onCommentClick: (FeedComment) -> Unit,
+    onDeleteCommentClick: (FeedComment) -> Unit,
+    onCommentUserClick: (FeedUser) -> Unit
+) {
+    if(commentsList.isEmpty()) return
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = Color(0xFFF3F3F3),
+                shape = RoundedCornerShape(4.dp)
+            )
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+    ) {
+        commentsList.forEachIndexed { index, comment ->
+            FeedCommentItem(
+                comment = comment,
+                onCommentClick = onCommentClick,
+                onCommentLongClick = onDeleteCommentClick,
+                onUserClick = onCommentUserClick
+            )
+
+            if (index != commentsList.lastIndex) {
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun FeedCommentListPreview() {
+    FeedCommentList(
+        commentsList = listOf(
+            FeedComment(
+                id = UUID.randomUUID().toString(),
+                postId = "1",
+                commentUser = FeedUser(
+                    id = "1",
+                    name = "张三",
+                    avatarUrl = ""
+                ),
+                content = "这个朋友圈写得不错"
+            ),
+            FeedComment(
+                id = UUID.randomUUID().toString(),
+                postId = "1",
+                commentUser = FeedUser(
+                    id = "2",
+                    name = "李四",
+                    avatarUrl = ""
+                ),
+                content = "哈哈哈哈哈哈哈哈，这是一条比较长的评论，用来测试自动换行效果。"
+            )
+        ),
+        onCommentClick = {},
+        onDeleteCommentClick = {},
+        onCommentUserClick = {}
+    )
+}

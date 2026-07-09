@@ -3,9 +3,11 @@ package com.hejulian.testdemo.presentation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -134,7 +136,9 @@ fun FeedScreen(
                     showTextPublish = true
                 }
             )
-        }
+        },
+        modifier = Modifier
+            .background(Color.White)
     ) { innerPadding ->
         PullToRefreshBox(
             isRefreshing = uiState.isLoading,
@@ -142,6 +146,7 @@ fun FeedScreen(
                 viewModel.handelIntent(FeedIntent.Refresh)
             },
             modifier = Modifier
+                .background(Color.White)
                 .padding(innerPadding)
                 .fillMaxSize()
         ){
@@ -167,11 +172,21 @@ fun FeedScreen(
                     FeedPostItem(
                         post = post,
                         currentUser = uiState.currentUser,
-                        onClick = {viewModel.handelIntent(FeedIntent.ShowMessage("item被点击了"))},
-                        onNameClick = {viewModel.handelIntent(FeedIntent.ShowMessage(post.postUser.name))},
+                        onClick = { viewModel.handelIntent(FeedIntent.ShowMessage("item被点击了")) },
+                        onNameClick = { viewModel.handelIntent(FeedIntent.ShowMessage(post.postUser.name)) },
                         onLikeClick = {
-                            if(!post.isLiked)viewModel.handelIntent(FeedIntent.LikePost(post.id, uiState.currentUser))
-                            else viewModel.handelIntent(FeedIntent.UnlikePost(post.id, uiState.currentUser))
+                            if (!post.isLiked) viewModel.handelIntent(
+                                FeedIntent.LikePost(
+                                    post.id,
+                                    uiState.currentUser
+                                )
+                            )
+                            else viewModel.handelIntent(
+                                FeedIntent.UnlikePost(
+                                    post.id,
+                                    uiState.currentUser
+                                )
+                            )
                         },
                         onAddCommentClick = {
                             commentPostId = post.id
@@ -180,16 +195,22 @@ fun FeedScreen(
                         onDeleteCommentClick = {
 
                         },
-                        onDeletePostClick = {
+                        onDeletePostClick = { post ->
                             pendingDeletePostId = post.id
                         },
                         onPostAvatarClick = {
                             viewModel.handelIntent(FeedIntent.ShowMessage(post.postUser.toString()))
                         },
-                        onLikedAvatarClick = { user->
+                        onLikedAvatarClick = { user ->
                             viewModel.handelIntent(FeedIntent.ShowMessage(user.toString()))
                         },
                         currentTime = currentTime,
+                        onCommentClick = {
+
+                        },
+                        onCommentUserClick = {
+
+                        },
                     )
                     HorizontalDivider(
                         thickness = 0.5.dp,

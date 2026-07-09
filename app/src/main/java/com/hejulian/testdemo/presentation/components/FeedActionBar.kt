@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.CommentBank
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -53,28 +54,28 @@ fun FeedActionBar(
     currentUser: FeedUser,
     onLikeClick: () -> Unit,
     onAddCommentClick: () -> Unit,
-    onDeletePostClick: () -> Unit,
+    onDeletePostClick: (FeedPost) -> Unit,
     currentTime: Long
 ) {
 
     var isShowMore by remember { mutableStateOf(false) }
 
-    Row(
+    Box(
         modifier = Modifier
             .height(35.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+            .fillMaxWidth()
     ) {
         Text(
             text = showTime(post.createTime, currentTime),
             fontSize = 14.sp,
             color = Color.Gray,
+            modifier = Modifier.align(Alignment.CenterStart)
         )
-
-        Spacer(modifier = Modifier.weight(1f))
 
         AnimatedVisibility(
             visible = isShowMore,
+            modifier = Modifier.align(Alignment.CenterEnd)
+                .padding(end = 25.dp),
             enter = expandHorizontally(
                 expandFrom = Alignment.End
             ) + fadeIn(),
@@ -86,7 +87,7 @@ fun FeedActionBar(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .background(
-                        color = Color(0xFF333333),
+                        color = Color(0xFF353535),
                         shape = RoundedCornerShape(4.dp)
                     )
                     .padding(horizontal = 16.dp)
@@ -106,7 +107,7 @@ fun FeedActionBar(
                         Text(
                             modifier = Modifier
                                 .clickable {
-                                    onDeletePostClick()
+                                    onDeletePostClick(post)
                                 },
                             text = "删除",
                             fontSize = 14.sp,
@@ -125,7 +126,7 @@ fun FeedActionBar(
                     verticalAlignment = Alignment.CenterVertically
                 ){
                     Icon(
-                        imageVector =  Icons.Default.FavoriteBorder,
+                        imageVector =  Icons.Default.Favorite,
                         contentDescription = "赞",
                         modifier = Modifier
                             .size(16.dp),
@@ -160,7 +161,7 @@ fun FeedActionBar(
                         modifier = Modifier.size(16.dp),
                         tint = Color.White
                     )
-                    Spacer(modifier = Modifier.width(15.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         modifier = Modifier
                             .clickable {
@@ -173,32 +174,17 @@ fun FeedActionBar(
                 }
             }
         }
-
-        if(!isShowMore){
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = "更多",
-                modifier = Modifier
-                    .clickable {
-                        isShowMore = true
-                    }
-                    .size(20.dp),
-                tint = Color.Gray
-            )
-        }
-
-        if(isShowMore){
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "折叠",
-                modifier = Modifier
-                    .clickable {
-                        isShowMore = false
-                    }
-                    .size(20.dp),
-                tint = Color.Gray
-            )
-        }
+        Icon(
+            imageVector = Icons.Default.MoreHoriz,
+            contentDescription = "更多",
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .clickable {
+                    isShowMore = !isShowMore
+                }
+                .size(24.dp),
+            tint = Color.Gray
+        )
     }
 }
 
