@@ -1,10 +1,8 @@
 package com.hejulian.testdemo.presentation
 
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -185,8 +183,11 @@ fun FeedScreen(
                         onDeletePostClick = {
                             pendingDeletePostId = post.id
                         },
-                        onAvatarClick = {
+                        onPostAvatarClick = {
                             viewModel.handelIntent(FeedIntent.ShowMessage(post.postUser.toString()))
+                        },
+                        onLikedAvatarClick = { user->
+                            viewModel.handelIntent(FeedIntent.ShowMessage(user.toString()))
                         },
                         currentTime = currentTime,
                     )

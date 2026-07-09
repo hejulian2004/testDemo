@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,7 +31,8 @@ fun FeedPostItem(
     onAddCommentClick: () -> Unit,//添加评论
     onDeleteCommentClick: () -> Unit,//删除评论
     onDeletePostClick: () -> Unit,//删除按钮
-    onAvatarClick:() -> Unit,
+    onPostAvatarClick:() -> Unit,
+    onLikedAvatarClick: (FeedUser) -> Unit,
     currentTime: Long
 ) {
     Row(
@@ -48,7 +48,7 @@ fun FeedPostItem(
             url = post.postUser.avatarUrl,
             size = 48.dp,
             onClick = {
-                onAvatarClick()
+                onPostAvatarClick()
             }
         )
 
@@ -89,6 +89,13 @@ fun FeedPostItem(
                 currentTime = currentTime
             )
 
+            FeedLikedUserAvatarBar(
+                likedUserList = post.likedUsers,
+                onUserClick = { user ->
+                    onLikedAvatarClick(user)
+                }
+            )
+
         }
     }
 
@@ -119,7 +126,8 @@ fun FeedPostItemPreview(){
         onAddCommentClick =  {  },
         onDeleteCommentClick =  {  },
         onDeletePostClick =  {  },
-        onAvatarClick = {  },
+        onPostAvatarClick = {  },
+        onLikedAvatarClick = {},
         currentTime = System.currentTimeMillis()
     )
 }

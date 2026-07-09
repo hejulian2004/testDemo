@@ -44,7 +44,7 @@ class FeedRepositoryImpl : FeedRepository{
         _feedPosts.update { posts ->
             posts.map{
                 if(it.id == postId){
-                    it.copy(isLiked = true)
+                    it.copy(isLiked = true, likedUsers = it.likedUsers + user)
                 } else it
             }
         }
@@ -149,15 +149,14 @@ class FeedRepositoryImpl : FeedRepository{
 }
 
 private fun createFakeData(): List<FeedPost> {
-    val uuid = "1"
-    val user = FeedUser(id = uuid, name = "何聚敛", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())
+    val user = FeedUser(id = "1", name = "何聚敛1", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())
     return listOf(
         createFakePost(user),
-        createFakePost(user.copy(name = "何聚敛2", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())),
-        createFakePost(user.copy(name = "何聚敛3", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())),
-        createFakePost(user.copy(name = "何聚敛4", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())),
-        createFakePost(user.copy(name = "何聚敛5", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())),
-        createFakePost(user.copy(name = "何聚敛6", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())),
+        createFakePost(user.copy(id = "2", name = "何聚敛2", avatarUrl = "https://i.pravatar.cc/300?t=1"+ System.currentTimeMillis())),
+        createFakePost(user.copy(id = "3",name = "何聚敛3", avatarUrl = "https://i.pravatar.cc/300?t=2"+ System.currentTimeMillis())),
+        createFakePost(user.copy(id = "4",name = "何聚敛4", avatarUrl = "https://i.pravatar.cc/300?t=3"+ System.currentTimeMillis())),
+        createFakePost(user.copy(id = "5",name = "何聚敛5", avatarUrl = "https://i.pravatar.cc/300?t=4"+ System.currentTimeMillis())),
+        createFakePost(user.copy(id = "6",name = "何聚敛6", avatarUrl = "https://i.pravatar.cc/300?t=5"+ System.currentTimeMillis())),
     )
 }
 
@@ -172,9 +171,42 @@ private fun createFakeComment(postId : String, commentUser: FeedUser, content: S
 
 
 private fun createFakePost(user: FeedUser): FeedPost{
+    val fakeLikedUser: List<FeedUser> = listOf(
+        FeedUser(
+            id = "11",
+            name = "张三",
+            avatarUrl = "https://i.pravatar.cc/300?img=1"
+        ),
+        FeedUser(
+            id = "22",
+            name = "李四",
+            avatarUrl = "https://i.pravatar.cc/300?img=2"
+        ),
+        FeedUser(
+            id = "33",
+            name = "王五",
+            avatarUrl = "https://i.pravatar.cc/300?img=3"
+        ),
+        FeedUser(
+            id = "44",
+            name = "张三2",
+            avatarUrl = "https://i.pravatar.cc/300?img=4"
+        ),
+        FeedUser(
+            id = "55",
+            name = "李四2",
+            avatarUrl = "https://i.pravatar.cc/300?img=5"
+        ),
+        FeedUser(
+            id = "66",
+            name = "王五2",
+            avatarUrl = "https://i.pravatar.cc/300?img=6"
+        )
+    )
     return FeedPost(
         id = UUID.randomUUID().toString(),
         postUser = user,
-        content = "这是一个测试内容-----------------------------------------------\n---\n---\n---\n"+ System.currentTimeMillis()
+        content = "这是一个测试内容-----------------------------------------------\n---\n---\n---\n"+ System.currentTimeMillis(),
+        likedUsers = fakeLikedUser
     )
 }

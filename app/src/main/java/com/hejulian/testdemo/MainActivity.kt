@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
             val feedViewModel: FeedViewModel = viewModel{
                 FeedViewModel(
                     feedRepository = FeedRepositoryImpl(),
-                    currentUser = FeedUser(id = "1", name="何聚敛", avatarUrl = "https://i.pravatar.cc/30")
+                    currentUser = FeedUser(id = "test", name="何聚敛", avatarUrl = "https://i.pravatar.cc/30")
                 )
             }
             FeedScreen(feedViewModel)
@@ -39,7 +39,7 @@ fun GreetingPreview() {
     val feedViewModel: FeedViewModel = viewModel{
         FeedViewModel(
             feedRepository = FeedRepositoryImpl(),
-            currentUser = FeedUser(id = "1", name="何聚敛", avatarUrl = "https://i.pravatar.cc/30")
+            currentUser = FeedUser(id = "test", name="何聚敛", avatarUrl = "https://i.pravatar.cc/30")
         )
     }
     FeedScreen(feedViewModel)
