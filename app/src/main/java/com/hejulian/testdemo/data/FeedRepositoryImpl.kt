@@ -30,7 +30,7 @@ class FeedRepositoryImpl : FeedRepository{
 
     override suspend fun refreshFeed() {
         delay(1000.milliseconds)
-        _feedPosts.value = createFakeData()
+        _feedPosts.value = createFakeData().sortedByDescending { it.createTime }
     }
 
     override suspend fun likePost(
@@ -44,7 +44,10 @@ class FeedRepositoryImpl : FeedRepository{
         _feedPosts.update { posts ->
             posts.map{
                 if(it.id == postId){
-                    it.copy(isLiked = true, likedUsers = it.likedUsers + user)
+                    it.copy(
+                        isLiked = true,
+                        likedUsers = it.likedUsers + user
+                    )
                 } else it
             }
         }
@@ -65,10 +68,15 @@ class FeedRepositoryImpl : FeedRepository{
             return "取消点赞失败，找不到该帖子"
         }
         _feedPosts.update { posts ->
-            posts.map{
-                if(it.id == postId){
-                    it.copy(isLiked = false)
-                } else it
+            posts.map{ post->
+                if(post.id == postId){
+                    post.copy(
+                        isLiked = false,
+                        likedUsers = post.likedUsers.filterNot { likedUser ->
+                            likedUser.id  == user.id
+                        }
+                    )
+                } else post
             }
         }
         return "取消点赞成功"

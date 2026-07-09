@@ -46,7 +46,7 @@ fun FeedPostItem(
     ) {
         Avatar(
             url = post.postUser.avatarUrl,
-            size = 48.dp,
+            size = 40.dp,
             onClick = {
                 onPostAvatarClick()
             }
@@ -58,13 +58,13 @@ fun FeedPostItem(
             modifier = Modifier.weight(1f)
         ) {
             Text(
-                modifier = Modifier.
-                    clickable{
+                modifier = Modifier
+                    .clickable{
                         onNameClick()
                     },
                 text = post.postUser.name,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
+                fontSize = 18.sp,
+                color = Color(0xFF576B95)
             )
 
             if(!post.content.isEmpty()){

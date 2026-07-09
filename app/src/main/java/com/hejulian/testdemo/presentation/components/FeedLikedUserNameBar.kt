@@ -63,7 +63,7 @@ fun FeedLikedUserAvatarBar(
 
                 if (index != likedUserList.lastIndex) {
                     Text(
-                        text = "，",
+                        text = ",",
                         fontSize = 14.sp,
                         color = Color(0xFF576B95)
                     )
