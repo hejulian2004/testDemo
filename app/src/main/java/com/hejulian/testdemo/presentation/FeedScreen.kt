@@ -4,11 +4,13 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -87,6 +89,8 @@ fun FeedScreen(
         mutableStateOf<String?>(null)
     }
 
+    val lazyListState = rememberLazyListState()
+
     LaunchedEffect(Unit) {
         while (true) {
             currentTime = System.currentTimeMillis()
@@ -109,13 +113,14 @@ fun FeedScreen(
                     }
                 }
 
-                is FeedEffect.OpenMoreMenu ->{
-
-                }
-
                 is FeedEffect.OpenComment ->{
                     commentPostId = effect.postId
                 }
+
+                is FeedEffect.ScrollToIndex ->{ //发帖后回到顶部,默认回到index=0
+                    lazyListState.animateScrollToItem(effect.index)
+                }
+
             }
         }
     }
@@ -143,7 +148,8 @@ fun FeedScreen(
                 .fillMaxSize()
         ){
             LazyColumn(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                state = lazyListState
             ) {
                 if(!uiState.isLoading&&uiState.posts.isEmpty()){
                     item {
@@ -260,6 +266,7 @@ fun FeedScreen(
 
     }
 
+    //发布文字内容
     AnimatedVisibility(
         visible = showTextPublish,
         enter = slideInVertically(initialOffsetY = {it}),

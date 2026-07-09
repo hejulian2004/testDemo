@@ -9,7 +9,7 @@ sealed interface FeedEffect{
         val postId: String
     ): FeedEffect
 
-    data class OpenMoreMenu(
-        val postId: String
+    data class ScrollToIndex(
+        val index: Int
     ): FeedEffect
 }

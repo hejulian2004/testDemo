@@ -17,7 +17,9 @@ class FeedRepositoryImpl : FeedRepository{
     private val _feedPosts = MutableStateFlow<List<FeedPost>>(emptyList())
 
     override fun getFeedPosts(): Flow<List<FeedPost>> {
-        return _feedPosts
+        return _feedPosts.map{ posts ->
+            posts.sortedByDescending { it.createTime }
+        }
     }
 
     override fun getFeedPost(postId: String): Flow<FeedPost?> {
@@ -112,10 +114,16 @@ class FeedRepositoryImpl : FeedRepository{
         content: String,
         mediaList: List<FeedMedia>
     ) {
-        val newPost = createFakePost(user).copy()
+        val newPost = FeedPost(
+            id = UUID.randomUUID().toString(),
+            postUser = user,
+            content = content,
+            mediaList = mediaList,
+        )
         _feedPosts.update { posts ->
             posts + newPost
         }
+
     }
 
     override suspend fun deletePost(postId: String) {

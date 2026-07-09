@@ -143,7 +143,7 @@ class FeedViewModel(
         }
     }
 
-    private fun createPost(postUser: FeedUser, content: String, mediaList: List<FeedMedia>){
+    private fun createPost(postUser: FeedUser, content: String, mediaList: List<FeedMedia>, scrollToIndex: Int = 0){
         viewModelScope.launch {
             feedRepository.createPost(
                 user = postUser,
@@ -151,6 +151,7 @@ class FeedViewModel(
                 mediaList = mediaList
             )
             _effect.emit(FeedEffect.ShowMessage("发布成功"))
+            _effect.emit(FeedEffect.ScrollToIndex(scrollToIndex))
         }
     }
 
