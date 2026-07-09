@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -35,11 +37,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hejulian.testdemo.data.FeedRepositoryImpl
 import com.hejulian.testdemo.data.model.FeedUser
 import com.hejulian.testdemo.presentation.components.BottomSheet
+import com.hejulian.testdemo.presentation.components.FeedCommentBar
 import com.hejulian.testdemo.presentation.components.FeedPostItem
 import com.hejulian.testdemo.presentation.components.FeedTopBar
 import com.hejulian.testdemo.presentation.components.TextPublishScreen
@@ -74,7 +79,7 @@ fun FeedScreen(
     }
 
     var commentContent by remember {
-        mutableStateOf<String?>(null)
+        mutableStateOf("")
     }
 
     var showTextPublish by remember {
@@ -309,6 +314,64 @@ fun FeedScreen(
                 showTextPublish = false
             }
         )
+    }
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    //发布评论
+    if (commentPostId != null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    focusManager.clearFocus(force = true)
+                    keyboardController?.hide()
+
+                    commentPostId = null
+                    commentContent = ""
+                },
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Box(
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    // 拦截输入框区域点击，避免点输入框也关闭
+                }
+            ) {
+                FeedCommentBar(
+                    value = commentContent,
+                    onValueChange = {
+                        commentContent = it
+                    },
+                    onSendClick = {
+                        val postId = commentPostId
+                        val content = commentContent.trim()
+
+                        if (postId != null && content.isNotEmpty()) {
+                            viewModel.handelIntent(
+                                FeedIntent.AddComment(
+                                    postId = postId,
+                                    user = uiState.currentUser,
+                                    content = content
+                                )
+                            )
+
+                            focusManager.clearFocus(force = true)
+                            keyboardController?.hide()
+
+                            commentPostId = null
+                            commentContent = ""
+                        }
+                    }
+                )
+            }
+        }
     }
 }
 

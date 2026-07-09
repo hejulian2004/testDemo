@@ -166,6 +166,7 @@ fun FeedActionBar(
                         modifier = Modifier
                             .clickable {
                                 onAddCommentClick()
+                                isShowMore = false
                             },
                         text = "评论",
                         fontSize = 14.sp,
