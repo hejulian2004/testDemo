@@ -17,6 +17,7 @@ import coil3.compose.AsyncImage
 
 @Composable
 fun Avatar(
+    modifier: Modifier = Modifier,
     url: String,
     size: Dp,
     cornerRadius: Dp = 6.dp,
@@ -25,7 +26,7 @@ fun Avatar(
     val shape = RoundedCornerShape(cornerRadius)
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .size(size)
             .clip(shape),
         shape = shape,

@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun TextPublishScreen(
+    modifier: Modifier = Modifier,
     onCancelClick: () -> Unit,
     onPostClick: (String) -> Unit
 ) {

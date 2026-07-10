@@ -6,6 +6,7 @@ import androidx.compose.foundation.indication
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,18 +26,20 @@ import com.hejulian.testdemo.data.model.FeedUser
 
 @Composable
 fun FeedLikedUserAvatarBar(
+    modifier: Modifier = Modifier,
     likedUserList: List<FeedUser>,
     onUserClick: (FeedUser) -> Unit
 ) {
     if(likedUserList.isEmpty())return
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .background(
                 color = Color(0xFFF3F3F3),
                 shape = RoundedCornerShape(4.dp)
             )
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+            .padding(horizontal = 6.dp, vertical = 6.dp)
+            .fillMaxWidth(),
         verticalAlignment = Alignment.Top
     ) {
         Icon(

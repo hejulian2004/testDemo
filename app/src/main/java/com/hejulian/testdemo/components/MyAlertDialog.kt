@@ -4,10 +4,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
 @Composable
 fun MyAlertDialog(
+    modifier: Modifier = Modifier,
     onDismissRequest: () -> Unit,
     title: String,
     text: String,
@@ -15,9 +17,8 @@ fun MyAlertDialog(
     onDismissClick: () -> Unit
 ){
     AlertDialog(
-        onDismissRequest = {
-            onDismissRequest()
-        },
+        modifier = modifier,
+        onDismissRequest = onDismissRequest,
         title = {
             Text(text = title)
         },
@@ -25,11 +26,7 @@ fun MyAlertDialog(
             Text(text = text)
         },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirmClick()
-                }
-            ) {
+            TextButton(onClick = onConfirmClick) {
                 Text(
                     text = "删除",
                     color = Color.Red
@@ -37,11 +34,7 @@ fun MyAlertDialog(
             }
         },
         dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismissClick()
-                }
-            ) {
+            TextButton(onClick = onDismissClick) {
                 Text(text = "取消")
             }
         }

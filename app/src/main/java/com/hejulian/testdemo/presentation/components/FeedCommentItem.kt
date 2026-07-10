@@ -18,6 +18,7 @@ import com.hejulian.testdemo.data.model.FeedUser
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FeedCommentItem(
+    modifier: Modifier = Modifier,
     currentUser: FeedUser,
     comment: FeedComment,
     onCommentClick: (FeedComment) -> Unit,
@@ -25,7 +26,7 @@ fun FeedCommentItem(
     onCommentUserNameClick: (FeedUser) -> Unit
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
     ) {
         Text(

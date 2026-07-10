@@ -11,12 +11,13 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun BottomSheet(
+    modifier: Modifier = Modifier,
     onShootClick: () -> Unit,
     onChooseClick: () -> Unit,
     onCancelClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(bottom = 32.dp)
     ) {

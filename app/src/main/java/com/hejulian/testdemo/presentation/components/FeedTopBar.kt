@@ -26,11 +26,12 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun FeedTopBar (
+    modifier: Modifier = Modifier,
     onShortClickCreatePost: () -> Unit,
     onLongClickCreatePost: () -> Unit
 ){
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(color = Color(0xFFF5F5F5))
             .statusBarsPadding()//避开顶部系统信息栏

@@ -18,6 +18,7 @@ import java.util.UUID
 
 @Composable
 fun FeedCommentList(
+    modifier: Modifier = Modifier,
     currentUser: FeedUser,
     commentsList: List<FeedComment>,
     onCommentClick: (FeedComment) -> Unit,
@@ -27,7 +28,7 @@ fun FeedCommentList(
     if(commentsList.isEmpty()) return
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(
                 color = Color(0xFFF3F3F3),

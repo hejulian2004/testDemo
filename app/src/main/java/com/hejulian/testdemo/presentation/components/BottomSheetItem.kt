@@ -13,11 +13,12 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun BottomSheetItem(
+    modifier: Modifier = Modifier,
     text: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() }
             .padding(16.dp),

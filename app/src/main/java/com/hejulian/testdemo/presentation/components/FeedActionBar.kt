@@ -42,6 +42,7 @@ import java.util.UUID
 
 @Composable
 fun FeedActionBar(
+    modifier: Modifier = Modifier,
     post: FeedPost,
     currentUser: FeedUser,
     onLikeClick: () -> Unit,
@@ -53,7 +54,7 @@ fun FeedActionBar(
     var isShowMore by remember { mutableStateOf(false) }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .height(35.dp)
             .fillMaxWidth()
     ) {

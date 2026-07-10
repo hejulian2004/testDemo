@@ -28,6 +28,7 @@ import java.util.UUID
 
 @Composable
 fun FeedPostItem(
+    modifier: Modifier = Modifier,
     post: FeedPost,
     currentUser: FeedUser,
     onClick: (FeedPost) -> Unit,//整体被点击
@@ -43,7 +44,7 @@ fun FeedPostItem(
     currentTime: Long
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .background(Color.White)
             .fillMaxWidth()
             .padding(12.dp)

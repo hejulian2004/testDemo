@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun FeedCommentBar(
+    modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
     onSendClick: () -> Unit,
@@ -42,7 +43,7 @@ fun FeedCommentBar(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .imePadding()
             .navigationBarsPadding(),
