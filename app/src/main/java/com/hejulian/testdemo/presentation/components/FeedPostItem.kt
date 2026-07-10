@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hejulian.testdemo.data.createFakePost
 import com.hejulian.testdemo.data.model.FeedComment
 import com.hejulian.testdemo.data.model.FeedPost
 import com.hejulian.testdemo.data.model.FeedUser
@@ -140,21 +141,14 @@ fun FeedPostItem(
 @Composable
 fun FeedPostItemPreview(){
     val uuid = UUID.randomUUID().toString()
+    val user = FeedUser(
+        id = uuid,
+        name = "何聚敛",
+        avatarUrl = "https://i.pravatar.cc/300"
+    )
     FeedPostItem(
-        post = FeedPost(
-            id = uuid,
-            postUser = FeedUser(
-                id = uuid,
-                name = "何聚敛",
-                avatarUrl = "https://i.pravatar.cc/300"
-            ),
-            content = "这是一条测试朋友圈内容",
-        ),
-        currentUser = FeedUser(
-            id = uuid,
-            name = "何聚敛",
-            avatarUrl = "https://i.pravatar.cc/300"
-        ),
+        post = createFakePost(user),
+        currentUser = user,
         onClick = { },
         onNameClick = {},
         onLikeClick = { },

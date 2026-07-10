@@ -155,7 +155,7 @@ class FeedRepositoryImpl : FeedRepository{
 
 }
 
-private fun createFakeData(): List<FeedPost> {
+fun createFakeData(): List<FeedPost> {
     val user = FeedUser(id = "1", name = "何聚敛1", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())
     return listOf(
         createFakePost(user),
@@ -177,7 +177,7 @@ private fun createComment(postId : String, commentUser: FeedUser, content: Strin
 }
 
 
-private fun createFakePost(user: FeedUser): FeedPost{
+fun createFakePost(user: FeedUser): FeedPost{
     val fakeLikedUser: List<FeedUser> = listOf(
         FeedUser(
             id = "11",
@@ -229,7 +229,7 @@ private fun createFakePost(user: FeedUser): FeedPost{
     return FeedPost(
         id = postId,
         postUser = user,
-        content = "这是一个测试内容-----------------------------------------------\n---\n---\n---\n"+ System.currentTimeMillis(),
+        content = "这是一个测试内容,这是一个测试内容,这是一个测试内容,这是一个测试内容,这是一个测试内容-----------------------------------------------\n---\n---\n---\n"+ System.currentTimeMillis(),
         likedUsers = fakeLikedUser,
         commentsList = listOf(
             FeedComment(

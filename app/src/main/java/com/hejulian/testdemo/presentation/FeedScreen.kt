@@ -41,7 +41,9 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.hejulian.testdemo.data.FeedRepository
 import com.hejulian.testdemo.data.FeedRepositoryImpl
+import com.hejulian.testdemo.data.createFakeData
 import com.hejulian.testdemo.data.model.FeedUser
 import com.hejulian.testdemo.presentation.components.BottomSheet
 import com.hejulian.testdemo.presentation.components.FeedCommentBar
@@ -51,6 +53,7 @@ import com.hejulian.testdemo.presentation.components.TextPublishScreen
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -378,12 +381,18 @@ fun FeedScreen(
 @Preview
 @Composable
 fun FeedScreenPreview(){
-    val repository = FeedRepositoryImpl()
+    val uuid = UUID.randomUUID().toString()
     val user = FeedUser(
-        id = "1",
+        id = uuid,
         name = "何聚敛",
-        avatarUrl = ""
+        avatarUrl = "https://i.pravatar.cc/300"
     )
+
+    val repository = object : FeedRepository by FeedRepositoryImpl() {
+        override fun getFeedPosts() = kotlinx.coroutines.flow.flowOf(
+            createFakeData()
+        )
+    }
 
     FeedScreen(
         viewModel = FeedViewModel(
