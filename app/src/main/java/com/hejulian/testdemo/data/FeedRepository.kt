@@ -38,8 +38,7 @@ interface FeedRepository {
     ): List<FeedComment>
 
     suspend fun deleteComment(
-        postId: String,
-        commentId: String,
+        comment: FeedComment
     ): String
 
     suspend fun createPost(

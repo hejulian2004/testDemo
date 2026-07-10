@@ -3,6 +3,7 @@ package com.hejulian.testdemo.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hejulian.testdemo.data.FeedRepository
+import com.hejulian.testdemo.data.model.FeedComment
 import com.hejulian.testdemo.data.model.FeedMedia
 import com.hejulian.testdemo.data.model.FeedUser
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -59,10 +60,6 @@ class FeedViewModel(
                 deletePost(feedIntent.postId)
             }
 
-            is FeedIntent.OpenComment ->{
-                openComment(feedIntent.postId)
-            }
-
             is FeedIntent.AddComment -> {
                 addComment(
                     feedIntent.postId,
@@ -73,8 +70,7 @@ class FeedViewModel(
 
             is FeedIntent.DeleteComment -> {
                 deleteComment(
-                    feedIntent.postId,
-                    feedIntent.commentId
+                    feedIntent.comment
                 )
             }
 
@@ -191,12 +187,6 @@ class FeedViewModel(
         }
     }
 
-    private fun openComment(postId: String) {
-        viewModelScope.launch {
-            _effect.emit(FeedEffect.OpenComment(postId))
-        }
-    }
-
     private fun addComment(postId: String, user: FeedUser, content: String) {
         viewModelScope.launch {
             feedRepository.addComment(
@@ -208,9 +198,9 @@ class FeedViewModel(
         }
     }
 
-    private fun deleteComment(postId: String, commentId: String) {
+    private fun deleteComment(comment: FeedComment) {
         viewModelScope.launch {
-            feedRepository.deleteComment(postId = postId, commentId = commentId)
+            feedRepository.deleteComment(comment = comment)
             _effect.emit(FeedEffect.ShowMessage("删除评论成功"))
         }
     }

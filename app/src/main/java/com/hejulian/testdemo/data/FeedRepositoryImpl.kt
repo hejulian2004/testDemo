@@ -105,11 +105,11 @@ class FeedRepositoryImpl : FeedRepository{
         return _feedPosts.value.find { it.id == postId }?.commentsList ?: emptyList()
     }
 
-    override suspend fun deleteComment(postId: String, commentId: String): String {
+    override suspend fun deleteComment(comment: FeedComment): String {
         _feedPosts.update { posts ->
             posts.map { post ->
-                if(post.id == postId){
-                    post.copy(commentsList = post.commentsList.filter { it.id!=commentId })
+                if(post.id == comment.postId){
+                    post.copy(commentsList = post.commentsList.filter { it.id!=comment.id })
                 }else post
             }
         }

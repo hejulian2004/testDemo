@@ -5,10 +5,6 @@ sealed interface FeedEffect{
         val message: String
     ): FeedEffect
 
-    data class OpenComment(
-        val postId: String
-    ): FeedEffect
-
     data class ScrollToIndex(
         val index: Int
     ): FeedEffect

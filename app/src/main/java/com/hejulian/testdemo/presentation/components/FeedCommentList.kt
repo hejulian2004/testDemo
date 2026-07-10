@@ -18,6 +18,7 @@ import java.util.UUID
 
 @Composable
 fun FeedCommentList(
+    currentUser: FeedUser,
     commentsList: List<FeedComment>,
     onCommentClick: (FeedComment) -> Unit,
     onDeleteCommentClick: (FeedComment) -> Unit,
@@ -36,10 +37,11 @@ fun FeedCommentList(
     ) {
         commentsList.forEachIndexed { index, comment ->
             FeedCommentItem(
+                currentUser = currentUser,
                 comment = comment,
                 onCommentClick = onCommentClick,
                 onCommentLongClick = onDeleteCommentClick,
-                onUserClick = onCommentUserClick
+                onCommentUserNameClick = onCommentUserClick
             )
 
             if (index != commentsList.lastIndex) {
@@ -53,6 +55,11 @@ fun FeedCommentList(
 @Composable
 private fun FeedCommentListPreview() {
     FeedCommentList(
+        currentUser = FeedUser(
+            id = UUID.randomUUID().toString(),
+            name = "test",
+            avatarUrl = ""
+        ),
         commentsList = listOf(
             FeedComment(
                 id = UUID.randomUUID().toString(),

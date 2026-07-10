@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,7 +30,7 @@ import java.util.UUID
 fun FeedPostItem(
     post: FeedPost,
     currentUser: FeedUser,
-    onClick: () -> Unit,//整体被点击
+    onClick: (FeedPost) -> Unit,//整体被点击
     onNameClick: () -> Unit,//名字被点击
     onLikeClick: () -> Unit,//点赞
     onAddCommentClick: () -> Unit,//添加评论
@@ -47,7 +48,7 @@ fun FeedPostItem(
             .fillMaxWidth()
             .padding(12.dp)
             .clickable{
-                onClick()
+                onClick(post)
             }
     ) {
         Avatar(
@@ -75,13 +76,14 @@ fun FeedPostItem(
 
             if(!post.content.isEmpty()){
                 Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = post.content,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 17.sp,
-                    color = Color.Black
-                )
+                SelectionContainer {
+                    Text(
+                        text = post.content,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 17.sp,
+                        color = Color.Black
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -119,6 +121,7 @@ fun FeedPostItem(
                 }
 
                 FeedCommentList(
+                    currentUser = currentUser,
                     commentsList = post.commentsList,
                     onCommentClick = { comment ->
                         onCommentClick(comment)

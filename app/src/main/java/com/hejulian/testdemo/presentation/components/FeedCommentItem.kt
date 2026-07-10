@@ -5,7 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -18,22 +18,15 @@ import com.hejulian.testdemo.data.model.FeedUser
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FeedCommentItem(
+    currentUser: FeedUser,
     comment: FeedComment,
     onCommentClick: (FeedComment) -> Unit,
     onCommentLongClick: (FeedComment) -> Unit,
-    onUserClick: (FeedUser) -> Unit
+    onCommentUserNameClick: (FeedUser) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(
-                onClick = {
-                    onCommentClick(comment)
-                },
-                onLongClick = {
-                    onCommentLongClick(comment)
-                }
-            )
     ) {
         Text(
             text = "${comment.commentUser.name}:",
@@ -41,23 +34,37 @@ fun FeedCommentItem(
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.clickable{
-                onUserClick(comment.commentUser)
+                onCommentUserNameClick(comment.commentUser)
             }
         )
 
-        Text(
-            text = comment.content,
-            fontSize = 14.sp,
-            modifier = Modifier
-                .weight(1f)
-                .combinedClickable(
-                    onClick = {
-                        onUserClick(comment.commentUser)
-                    },
-                    onLongClick = {
-                        onCommentLongClick(comment)
-                    }
+        if(currentUser.id == comment.commentUser.id){
+            Text(
+                text = comment.content,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .weight(1f)
+                    .combinedClickable(
+                        onClick = {
+                            onCommentClick(comment)
+                        },
+                        onLongClick = {
+                            onCommentLongClick(comment)
+                        }
+                    )
+            )
+        } else{
+            SelectionContainer{
+                Text(
+                    text = comment.content,
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable{
+                            onCommentClick(comment)
+                        }
                 )
-        )
+            }
+        }
     }
 }

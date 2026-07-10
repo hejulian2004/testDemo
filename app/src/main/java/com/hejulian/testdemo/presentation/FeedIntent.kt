@@ -1,5 +1,6 @@
 package com.hejulian.testdemo.presentation
 
+import com.hejulian.testdemo.data.model.FeedComment
 import com.hejulian.testdemo.data.model.FeedMedia
 import com.hejulian.testdemo.data.model.FeedUser
 
@@ -16,10 +17,6 @@ sealed interface FeedIntent{
         val user: FeedUser
     ): FeedIntent
 
-    data class OpenComment(
-        val postId: String
-    ): FeedIntent
-
     data class AddComment(
         val postId: String,
         val user: FeedUser,
@@ -27,9 +24,7 @@ sealed interface FeedIntent{
     ): FeedIntent
 
     data class DeleteComment(
-        val postId: String,
-        val commentId: String,
-        val user: FeedUser
+        val comment: FeedComment
     ): FeedIntent
 
     data class CreatePost(

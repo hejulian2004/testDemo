@@ -1,5 +1,8 @@
 package com.hejulian.testdemo.presentation
 
+import android.content.DialogInterface
+import android.widget.MultiAutoCompleteTextView
+import androidx.appcompat.widget.DialogTitle
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -41,9 +44,11 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.hejulian.testdemo.components.MyAlertDialog
 import com.hejulian.testdemo.data.FeedRepository
 import com.hejulian.testdemo.data.FeedRepositoryImpl
 import com.hejulian.testdemo.data.createFakeData
+import com.hejulian.testdemo.data.model.FeedComment
 import com.hejulian.testdemo.data.model.FeedUser
 import com.hejulian.testdemo.presentation.components.BottomSheet
 import com.hejulian.testdemo.presentation.components.FeedCommentBar
@@ -52,6 +57,7 @@ import com.hejulian.testdemo.presentation.components.FeedTopBar
 import com.hejulian.testdemo.presentation.components.TextPublishScreen
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
@@ -97,6 +103,10 @@ fun FeedScreen(
         mutableStateOf<String?>(null)
     }
 
+    var pendingDeleteComment by remember {
+        mutableStateOf<FeedComment?>(null)
+    }
+
     val lazyListState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
@@ -121,14 +131,9 @@ fun FeedScreen(
                     }
                 }
 
-                is FeedEffect.OpenComment ->{
-                    commentPostId = effect.postId
-                }
-
                 is FeedEffect.ScrollToIndex ->{ //发帖后回到顶部,默认回到index=0
                     lazyListState.animateScrollToItem(effect.index)
                 }
-
             }
         }
     }
@@ -180,7 +185,9 @@ fun FeedScreen(
                     FeedPostItem(
                         post = post,
                         currentUser = uiState.currentUser,
-                        onClick = { viewModel.handelIntent(FeedIntent.ShowMessage("item被点击了")) },
+                        onClick = { post ->
+                            viewModel.handelIntent(FeedIntent.ShowMessage("postId:${post.id}"))
+                        },
                         onNameClick = { viewModel.handelIntent(FeedIntent.ShowMessage(post.postUser.name)) },
                         onLikeClick = {
                             if (!post.isLiked) viewModel.handelIntent(
@@ -200,8 +207,12 @@ fun FeedScreen(
                             commentPostId = post.id
                             commentContent = ""
                         },
-                        onDeleteCommentClick = {
-
+                        onDeleteCommentClick = { comment ->
+                            pendingDeleteComment = if(comment.commentUser.id == uiState.currentUser.id){
+                                comment
+                            } else{
+                                null
+                            }
                         },
                         onDeletePostClick = { post ->
                             pendingDeletePostId = post.id
@@ -213,11 +224,11 @@ fun FeedScreen(
                             viewModel.handelIntent(FeedIntent.ShowMessage(user.toString()))
                         },
                         currentTime = currentTime,
-                        onCommentClick = {
-
+                        onCommentClick = { comment ->
+                            viewModel.handelIntent(FeedIntent.ShowMessage(comment.toString()))
                         },
-                        onCommentUserClick = {
-
+                        onCommentUserClick = { user ->
+                            viewModel.handelIntent(FeedIntent.ShowMessage(user.toString()))
                         },
                     )
                     HorizontalDivider(
@@ -226,74 +237,78 @@ fun FeedScreen(
                     )
                 }
             }
+        }
+    }
 
-            if(showBottomSheet){
-                ModalBottomSheet(
-                    onDismissRequest = {showBottomSheet = false},
-                    sheetState = bottomSheetState,
-                    dragHandle = {
-                        BottomSheetDefaults.DragHandle()
-                    }
-                ) {
-                    BottomSheet(
-                        onShootClick = {
+    //展开发布bottom sheet栏
+    if(showBottomSheet){
+        ModalBottomSheet(
+            onDismissRequest = {showBottomSheet = false},
+            sheetState = bottomSheetState,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle()
+            }
+        ) {
+            BottomSheet(
+                onShootClick = {
 
-                        },
-                        onChooseClick = {
+                },
+                onChooseClick = {
 
-                        },
-                        onCancelClick = {
-                            showBottomSheet = false
-                        }
+                },
+                onCancelClick = {
+                    showBottomSheet = false
+                }
+            )
+        }
+    }
+
+    //删除自己的帖子
+    if(pendingDeletePostId != null) {
+        MyAlertDialog(
+            onDismissRequest = {
+                pendingDeletePostId = null
+            },
+            title = "确认删除",
+            text = "确定要删除这条动态吗？删除后不可恢复",
+            onConfirmClick = {
+                val postId = pendingDeletePostId
+                if (postId != null) {
+                    viewModel.handelIntent(
+                        FeedIntent.DeletePost(
+                            postId = postId
+                        )
                     )
                 }
+                pendingDeletePostId = null
+            },
+            onDismissClick = {
+                pendingDeletePostId = null
             }
+        )
+    }
 
-            //删除自己的帖子
-            if (pendingDeletePostId != null) {
-                AlertDialog(
-                    onDismissRequest = {
-                        pendingDeletePostId = null
-                    },
-                    title = {
-                        Text(text = "确认删除")
-                    },
-                    text = {
-                        Text(text = "确定要删除这条动态吗？删除后不可恢复。")
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                val postId = pendingDeletePostId
-                                if (postId != null) {
-                                    viewModel.handelIntent(
-                                        FeedIntent.DeletePost(
-                                            postId = postId
-                                        )
-                                    )
-                                }
-                                pendingDeletePostId = null
-                            }
-                        ) {
-                            Text(
-                                text = "删除",
-                                color = Color.Red
-                            )
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                pendingDeletePostId = null
-                            }
-                        ) {
-                            Text(text = "取消")
-                        }
-                    }
-                )
+    //删除自己发的评论
+    if(pendingDeleteComment != null){
+        MyAlertDialog(
+            onDismissRequest = {
+                pendingDeleteComment = null
+            },
+            title = "确认删除",
+            text = "确定要删除这条评论吗？删除后不可恢复",
+            onConfirmClick = {
+                val comment = pendingDeleteComment
+                if(comment != null){
+                    viewModel.handelIntent(
+                        FeedIntent.DeleteComment(comment = comment)
+                    )
+                }
+                pendingDeleteComment = null
+            },
+            onDismissClick = {
+                pendingDeleteComment = null
             }
-        }
-
+        )
     }
 
     //发布文字内容
@@ -319,10 +334,9 @@ fun FeedScreen(
         )
     }
 
+    //发布评论
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-
-    //发布评论
     if (commentPostId != null) {
         Box(
             modifier = Modifier
@@ -389,7 +403,7 @@ fun FeedScreenPreview(){
     )
 
     val repository = object : FeedRepository by FeedRepositoryImpl() {
-        override fun getFeedPosts() = kotlinx.coroutines.flow.flowOf(
+        override fun getFeedPosts() = flowOf(
             createFakeData()
         )
     }
