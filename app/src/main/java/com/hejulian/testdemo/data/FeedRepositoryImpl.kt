@@ -1,9 +1,11 @@
 package com.hejulian.testdemo.data
 
-import com.hejulian.testdemo.data.model.FeedComment
-import com.hejulian.testdemo.data.model.FeedMedia
-import com.hejulian.testdemo.data.model.FeedPost
-import com.hejulian.testdemo.data.model.FeedUser
+import com.hejulian.testdemo.domain.model.FeedComment
+import com.hejulian.testdemo.domain.model.FeedMedia
+import com.hejulian.testdemo.domain.model.FeedNotification
+import com.hejulian.testdemo.domain.model.FeedPost
+import com.hejulian.testdemo.domain.model.FeedUser
+import com.hejulian.testdemo.domain.repository.FeedRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,17 +14,19 @@ import kotlinx.coroutines.flow.update
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
-class FeedRepositoryImpl : FeedRepository{
+class FeedRepositoryImpl : FeedRepository {
     private val _feedPosts = MutableStateFlow<List<FeedPost>>(emptyList())
 
+    private val _feedNotifications = MutableStateFlow<List<FeedNotification>>(emptyList())
+
     override fun getFeedPosts(): Flow<List<FeedPost>> {
-        return _feedPosts.map{ posts ->
+        return _feedPosts.map { posts ->
             posts.sortedByDescending { it.createTime }
         }
     }
 
     override fun getFeedPost(postId: String): Flow<FeedPost?> {
-        return _feedPosts.map{ posts ->
+        return _feedPosts.map { posts ->
             posts.find { it.id == postId }
         }
     }
@@ -37,12 +41,12 @@ class FeedRepositoryImpl : FeedRepository{
         user: FeedUser
     ): String {
         val post = _feedPosts.value.find { it.id == postId }
-        if( post == null){
+        if (post == null) {
             return "点赞失败，找不到该帖子"
         }
         _feedPosts.update { posts ->
-            posts.map{
-                if(it.id == postId){
+            posts.map {
+                if (it.id == postId) {
                     it.copy(
                         isLiked = true,
                         likedUsers = it.likedUsers + user
@@ -63,19 +67,19 @@ class FeedRepositoryImpl : FeedRepository{
         user: FeedUser
     ): String {
         val post = _feedPosts.value.find { it.id == postId }
-        if( post == null){
+        if (post == null) {
             return "取消点赞失败，找不到该帖子"
         }
         _feedPosts.update { posts ->
-            posts.map{ post->
-                if(post.id == postId){
-                    post.copy(
+            posts.map { p ->
+                if (p.id == postId) {
+                    p.copy(
                         isLiked = false,
-                        likedUsers = post.likedUsers.filterNot { likedUser ->
-                            likedUser.id  == user.id
+                        likedUsers = p.likedUsers.filterNot { likedUser ->
+                            likedUser.id == user.id
                         }
                     )
-                } else post
+                } else p
             }
         }
         return "取消点赞成功"
@@ -90,11 +94,11 @@ class FeedRepositoryImpl : FeedRepository{
             postId = postId,
             commentUser = commentUser,
             content = content
-        ).copy()
+        )
         _feedPosts.update { posts ->
             posts.map {
-                if(it.id == postId){
-                    it.copy(commentsList = it.commentsList+newComment)
+                if (it.id == postId) {
+                    it.copy(commentsList = it.commentsList + newComment)
                 } else it
             }
         }
@@ -108,9 +112,9 @@ class FeedRepositoryImpl : FeedRepository{
     override suspend fun deleteComment(comment: FeedComment): String {
         _feedPosts.update { posts ->
             posts.map { post ->
-                if(post.id == comment.postId){
-                    post.copy(commentsList = post.commentsList.filter { it.id!=comment.id })
-                }else post
+                if (post.id == comment.postId) {
+                    post.copy(commentsList = post.commentsList.filter { it.id != comment.id })
+                } else post
             }
         }
         return "评论删除成功"
@@ -130,7 +134,6 @@ class FeedRepositoryImpl : FeedRepository{
         _feedPosts.update { posts ->
             posts + newPost
         }
-
     }
 
     override suspend fun deletePost(postId: String) {
@@ -153,21 +156,65 @@ class FeedRepositoryImpl : FeedRepository{
         }
     }
 
+    override suspend fun addNotification(feedNotification: FeedNotification) {
+        _feedNotifications.update { notifications ->
+            // Avoid duplicate notifications only for active likes on the same post by the same user.
+            // Comment notifications can always be added.
+            val exists = notifications.any {
+                it.id == feedNotification.id || (
+                    feedNotification.isLikeNotification &&
+                    it.isLikeNotification &&
+                    !it.isDelete &&
+                    it.post.id == feedNotification.post.id &&
+                    it.user.id == feedNotification.user.id
+                )
+            }
+            if (exists) notifications else notifications + feedNotification
+        }
+    }
+
+    override suspend fun deleteCommentNotification(feedNotification: FeedNotification) {
+        _feedNotifications.update { notifications ->
+            notifications.map { notification ->
+                if (notification.id == feedNotification.id) {
+                    notification.copy(isDelete = true)
+                } else notification
+            }
+        }
+    }
+
+    override suspend fun deleteLikeNotification(feedNotification: FeedNotification) {
+        _feedNotifications.update { notifications ->
+            notifications.filterNot { it.id == feedNotification.id || (it.post.id == feedNotification.post.id && it.user.id == feedNotification.user.id && it.isLikeNotification) }
+        }
+    }
+
+    override fun getNotifications(): Flow<List<FeedNotification>> {
+        return _feedNotifications.map { notifications ->
+            notifications.sortedByDescending { it.createdTime }
+        }
+    }
+
+    override suspend fun markAllNotificationsAsRead() {
+        _feedNotifications.update { notifications ->
+            notifications.map { it.copy(isRead = true) }
+        }
+    }
 }
 
 fun createFakeData(): List<FeedPost> {
-    val user = FeedUser(id = "1", name = "何聚敛1", avatarUrl = "https://i.pravatar.cc/300?t="+ System.currentTimeMillis())
+    val user = FeedUser(id = "1", name = "何聚敛1", avatarUrl = "https://i.pravatar.cc/300?t=" + System.currentTimeMillis())
     return listOf(
         createFakePost(user),
-        createFakePost(user.copy(id = "2", name = "何聚敛2", avatarUrl = "https://i.pravatar.cc/300?t=1"+ System.currentTimeMillis())),
-        createFakePost(user.copy(id = "3",name = "何聚敛3", avatarUrl = "https://i.pravatar.cc/300?t=2"+ System.currentTimeMillis())),
-        createFakePost(user.copy(id = "4",name = "何聚敛4", avatarUrl = "https://i.pravatar.cc/300?t=3"+ System.currentTimeMillis())),
-        createFakePost(user.copy(id = "5",name = "何聚敛5", avatarUrl = "https://i.pravatar.cc/300?t=4"+ System.currentTimeMillis())),
-        createFakePost(user.copy(id = "6",name = "何聚敛6", avatarUrl = "https://i.pravatar.cc/300?t=5"+ System.currentTimeMillis())),
+        createFakePost(user.copy(id = "2", name = "何聚敛2", avatarUrl = "https://i.pravatar.cc/300?t=1" + System.currentTimeMillis())),
+        createFakePost(user.copy(id = "3", name = "何聚敛3", avatarUrl = "https://i.pravatar.cc/300?t=2" + System.currentTimeMillis())),
+        createFakePost(user.copy(id = "4", name = "何聚敛4", avatarUrl = "https://i.pravatar.cc/300?t=3" + System.currentTimeMillis())),
+        createFakePost(user.copy(id = "5", name = "何聚敛5", avatarUrl = "https://i.pravatar.cc/300?t=4" + System.currentTimeMillis())),
+        createFakePost(user.copy(id = "6", name = "何聚敛6", avatarUrl = "https://i.pravatar.cc/300?t=5" + System.currentTimeMillis())),
     )
 }
 
-private fun createComment(postId : String, commentUser: FeedUser, content: String): FeedComment{
+private fun createComment(postId: String, commentUser: FeedUser, content: String): FeedComment {
     return FeedComment(
         id = UUID.randomUUID().toString(),
         postId = postId,
@@ -176,90 +223,41 @@ private fun createComment(postId : String, commentUser: FeedUser, content: Strin
     )
 }
 
-
-fun createFakePost(user: FeedUser): FeedPost{
+fun createFakePost(user: FeedUser): FeedPost {
     val fakeLikedUser: List<FeedUser> = listOf(
-        FeedUser(
-            id = "11",
-            name = "张三",
-            avatarUrl = "https://i.pravatar.cc/300?img=1"
-        ),
-        FeedUser(
-            id = "22",
-            name = "李四",
-            avatarUrl = "https://i.pravatar.cc/300?img=2"
-        ),
-        FeedUser(
-            id = "33",
-            name = "王五",
-            avatarUrl = "https://i.pravatar.cc/300?img=3"
-        ),
-        FeedUser(
-            id = "44",
-            name = "张三2",
-            avatarUrl = "https://i.pravatar.cc/300?img=4"
-        ),
-        FeedUser(
-            id = "55",
-            name = "李四2",
-            avatarUrl = "https://i.pravatar.cc/300?img=5"
-        ),
-        FeedUser(
-            id = "66",
-            name = "王五2",
-            avatarUrl = "https://i.pravatar.cc/300?img=6"
-        ),
-        FeedUser(
-            id = "77",
-            name = "张三3",
-            avatarUrl = "https://i.pravatar.cc/300?img=7"
-        ),
-        FeedUser(
-            id = "88",
-            name = "李四4",
-            avatarUrl = "https://i.pravatar.cc/300?img=8"
-        ),
-        FeedUser(
-            id = "99",
-            name = "王五5",
-            avatarUrl = "https://i.pravatar.cc/300?img=9"
-        )
+        FeedUser(id = "11", name = "张三", avatarUrl = "https://i.pravatar.cc/300?img=1"),
+        FeedUser(id = "22", name = "李四", avatarUrl = "https://i.pravatar.cc/300?img=2"),
+        FeedUser(id = "33", name = "王五", avatarUrl = "https://i.pravatar.cc/300?img=3"),
+        FeedUser(id = "44", name = "张三2", avatarUrl = "https://i.pravatar.cc/300?img=4"),
+        FeedUser(id = "55", name = "李四2", avatarUrl = "https://i.pravatar.cc/300?img=5"),
+        FeedUser(id = "66", name = "王五2", avatarUrl = "https://i.pravatar.cc/300?img=6"),
+        FeedUser(id = "77", name = "张三3", avatarUrl = "https://i.pravatar.cc/300?img=7"),
+        FeedUser(id = "88", name = "李四4", avatarUrl = "https://i.pravatar.cc/300?img=8"),
+        FeedUser(id = "99", name = "王五5", avatarUrl = "https://i.pravatar.cc/300?img=9")
     )
-    val postId =  UUID.randomUUID().toString()
+    val postId = UUID.randomUUID().toString()
     return FeedPost(
         id = postId,
         postUser = user,
-        content = "这是一个测试内容,这是一个测试内容,这是一个测试内容,这是一个测试内容,这是一个测试内容-----------------------------------------------\n---\n---\n---\n"+ System.currentTimeMillis(),
+        content = "这是一个测试内容,这是一个测试内容,这是一个测试内容,这是一个测试内容,这是一个测试内容-----------------------------------------------\n---\n---\n---\n" + System.currentTimeMillis(),
         likedUsers = fakeLikedUser,
         commentsList = listOf(
             FeedComment(
                 id = UUID.randomUUID().toString(),
                 postId = postId,
-                commentUser = FeedUser(
-                    id = "11",
-                    name = "张三",
-                    avatarUrl = "https://i.pravatar.cc/300?img=1"
-                ),
+                commentUser = FeedUser(id = "11", name = "张三", avatarUrl = "https://i.pravatar.cc/300?img=1"),
                 content = "这个朋友圈写得不错"
             ),
             FeedComment(
                 id = UUID.randomUUID().toString(),
                 postId = postId,
-                commentUser = FeedUser(
-                    id = "22",
-                    name = "李四",
-                    avatarUrl = "https://i.pravatar.cc/300?img=2"
-                ),
+                commentUser = FeedUser(id = "22", name = "李四", avatarUrl = "https://i.pravatar.cc/300?img=2"),
                 content = "这个朋友圈写得不错，这个朋友圈写得不错"
             ),
             FeedComment(
                 id = UUID.randomUUID().toString(),
                 postId = postId,
-                commentUser = FeedUser(
-                    id = "3",
-                    name = "王五",
-                    avatarUrl = "https://i.pravatar.cc/300?img=3"
-                ),
+                commentUser = FeedUser(id = "3", name = "王五", avatarUrl = "https://i.pravatar.cc/300?img=3"),
                 content = "这个朋友圈写得不错，这个朋友圈写得不错，这个朋友圈写得不错"
             )
         )

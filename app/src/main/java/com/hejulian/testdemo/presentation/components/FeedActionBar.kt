@@ -35,8 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hejulian.testdemo.data.model.FeedPost
-import com.hejulian.testdemo.data.model.FeedUser
+import com.hejulian.testdemo.domain.model.FeedPost
+import com.hejulian.testdemo.domain.model.FeedUser
 import com.hejulian.testdemo.utils.TimeUtils
 import java.util.UUID
 

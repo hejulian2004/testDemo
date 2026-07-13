@@ -1,10 +1,11 @@
 package com.hejulian.testdemo.presentation
 
-import com.hejulian.testdemo.data.model.FeedComment
-import com.hejulian.testdemo.data.model.FeedMedia
-import com.hejulian.testdemo.data.model.FeedUser
+import com.hejulian.testdemo.domain.model.FeedComment
+import com.hejulian.testdemo.domain.model.FeedMedia
+import com.hejulian.testdemo.domain.model.FeedNotification
+import com.hejulian.testdemo.domain.model.FeedUser
 
-sealed interface FeedIntent{
+sealed interface FeedIntent {
     data object Refresh: FeedIntent
 
     data class LikePost(
@@ -46,4 +47,20 @@ sealed interface FeedIntent{
     data class ShowMessage(
         val message: String
     ): FeedIntent
+
+    data class AddNotification(
+        val feedNotification: FeedNotification
+    ): FeedIntent
+
+    data class DeleteCommentNotification(
+        val feedNotification: FeedNotification
+    ): FeedIntent
+
+    data class DeleteLikeNotification(
+        val feedNotification: FeedNotification
+    ): FeedIntent
+
+    data object ClearAllNotifications: FeedIntent
+
+    data class NavigateTo(val screen: Screen): FeedIntent
 }

@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.hejulian.testdemo.data.model.FeedComment
-import com.hejulian.testdemo.data.model.FeedUser
+import com.hejulian.testdemo.domain.model.FeedComment
+import com.hejulian.testdemo.domain.model.FeedUser
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

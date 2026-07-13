@@ -1,0 +1,264 @@
+package com.hejulian.testdemo.presentation
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import com.hejulian.testdemo.domain.model.FeedMedia
+import com.hejulian.testdemo.domain.model.FeedNotification
+import com.hejulian.testdemo.presentation.components.Avatar
+import com.hejulian.testdemo.utils.TimeUtils
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NotificationScreen(
+    viewModel: FeedViewModel,
+    modifier: Modifier = Modifier
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    // Show both read and unread notifications that are not deleted
+    val notifications = uiState.notifications.filter { !it.isDelete }
+
+    Scaffold(
+        topBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(color = Color(0xFFF5F5F5))
+                    .statusBarsPadding()
+                    .height(56.dp)
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                // Back Button
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.CenterStart),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .clickable {
+                                viewModel.handelIntent(FeedIntent.NavigateTo(Screen.Feed))
+                            }
+                            .padding(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "返回",
+                            tint = Color.Black,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "朋友圈",
+                            fontSize = 16.sp,
+                            color = Color.Black
+                        )
+                    }
+                }
+
+                // Title
+                Text(
+                    text = "消息",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+                // Clear Button
+                if (notifications.isNotEmpty()) {
+                    TextButton(
+                        onClick = {
+                            viewModel.handelIntent(FeedIntent.ClearAllNotifications)
+                        },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
+                        Text(
+                            text = "清空",
+                            fontSize = 16.sp,
+                            color = Color(0xFF576B95),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        },
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(innerPadding)
+        ) {
+            if (notifications.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "暂无新消息",
+                        color = Color.Gray,
+                        fontSize = 16.sp
+                    )
+                }
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(
+                        items = notifications,
+                        key = { it.id }
+                    ) { notification ->
+                        NotificationItem(notification = notification)
+                        HorizontalDivider(
+                            thickness = 0.5.dp,
+                            color = Color.LightGray.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotificationItem(
+    notification: FeedNotification,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Left: Avatar
+        Avatar(
+            url = notification.user.avatarUrl,
+            size = 42.dp,
+            onClick = {}
+        )
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Center: User name, action and time
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = notification.user.name,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF576B95)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            if (notification.isLikeNotification) {
+                Text(
+                    text = "赞了你的动态",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            } else {
+                Text(
+                    text = notification.comment?.content ?: "评论了你的动态",
+                    fontSize = 14.sp,
+                    color = Color.Black
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = TimeUtils.formatTime(notification.createdTime),
+                fontSize = 12.sp,
+                color = Color.LightGray
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Right: Original Post Preview
+        Box(
+            modifier = Modifier
+                .size(50.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color(0xFFF5F5F5))
+                .padding(4.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            val media = notification.post.mediaList.firstOrNull()
+            if (media != null) {
+                val imageUrl = when (media) {
+                    is FeedMedia.Image -> media.url
+                    is FeedMedia.Video -> media.coverUrl
+                }
+                if (!imageUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "动态配图",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    PostTextPreview(text = notification.post.content)
+                }
+            } else {
+                PostTextPreview(text = notification.post.content)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PostTextPreview(text: String) {
+    Text(
+        text = text,
+        fontSize = 11.sp,
+        color = Color.Gray,
+        maxLines = 3,
+        overflow = TextOverflow.Ellipsis,
+        lineHeight = 13.sp
+    )
+}

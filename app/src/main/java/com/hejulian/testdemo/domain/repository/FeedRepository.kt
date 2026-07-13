@@ -1,9 +1,10 @@
-package com.hejulian.testdemo.data
+package com.hejulian.testdemo.domain.repository
 
-import com.hejulian.testdemo.data.model.FeedComment
-import com.hejulian.testdemo.data.model.FeedMedia
-import com.hejulian.testdemo.data.model.FeedPost
-import com.hejulian.testdemo.data.model.FeedUser
+import com.hejulian.testdemo.domain.model.FeedComment
+import com.hejulian.testdemo.domain.model.FeedMedia
+import com.hejulian.testdemo.domain.model.FeedNotification
+import com.hejulian.testdemo.domain.model.FeedPost
+import com.hejulian.testdemo.domain.model.FeedUser
 import kotlinx.coroutines.flow.Flow
 
 interface FeedRepository {
@@ -56,4 +57,20 @@ interface FeedRepository {
         content: String,
         mediaList: List<FeedMedia>
     )
+
+    suspend fun addNotification(
+        feedNotification: FeedNotification
+    )
+
+    suspend fun deleteCommentNotification(
+        feedNotification: FeedNotification
+    )
+
+    suspend fun deleteLikeNotification(
+        feedNotification: FeedNotification
+    )
+
+    fun getNotifications(): Flow<List<FeedNotification>>
+
+    suspend fun markAllNotificationsAsRead()
 }

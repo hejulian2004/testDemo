@@ -1,4 +1,4 @@
-package com.hejulian.testdemo.data.model
+package com.hejulian.testdemo.domain.model
 
 sealed interface FeedMedia {
     data class Image(

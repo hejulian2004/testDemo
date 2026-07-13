@@ -1,4 +1,4 @@
-package com.hejulian.testdemo.data.model
+package com.hejulian.testdemo.domain.model
 
 data class FeedComment (
     val id: String,

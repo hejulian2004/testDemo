@@ -2,10 +2,12 @@ package com.hejulian.testdemo.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hejulian.testdemo.data.FeedRepository
-import com.hejulian.testdemo.data.model.FeedComment
-import com.hejulian.testdemo.data.model.FeedMedia
-import com.hejulian.testdemo.data.model.FeedUser
+import com.hejulian.testdemo.domain.model.FeedComment
+import com.hejulian.testdemo.domain.model.FeedMedia
+import com.hejulian.testdemo.domain.model.FeedNotification
+import com.hejulian.testdemo.domain.model.FeedUser
+import com.hejulian.testdemo.domain.repository.FeedRepository
+import com.hejulian.testdemo.domain.usecase.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +19,25 @@ import kotlinx.coroutines.launch
 class FeedViewModel(
     private val feedRepository: FeedRepository,
     currentUser: FeedUser
-) : ViewModel(){
+) : ViewModel() {
+
+    // Clean Architecture Use Cases instantiated internally for simple dependency injection
+    private val getFeedPostsUseCase = GetFeedPostsUseCase(feedRepository)
+    private val refreshFeedUseCase = RefreshFeedUseCase(feedRepository)
+    private val likePostUseCase = LikePostUseCase(feedRepository)
+    private val unlikePostUseCase = UnlikePostUseCase(feedRepository)
+    private val addCommentUseCase = AddCommentUseCase(feedRepository)
+    private val deleteCommentUseCase = DeleteCommentUseCase(feedRepository)
+    private val createPostUseCase = CreatePostUseCase(feedRepository)
+    private val deletePostUseCase = DeletePostUseCase(feedRepository)
+    private val updatePostUseCase = UpdatePostUseCase(feedRepository)
+    private val getNotificationsUseCase = GetNotificationsUseCase(feedRepository)
+    private val addNotificationUseCase = AddNotificationUseCase(feedRepository)
+    private val deleteCommentNotificationUseCase = DeleteCommentNotificationUseCase(feedRepository)
+    private val deleteLikeNotificationUseCase = DeleteLikeNotificationUseCase(feedRepository)
+    private val clearNotificationsUseCase = ClearNotificationsUseCase(feedRepository)
+    private val markNotificationsAsReadUseCase = MarkNotificationsAsReadUseCase(feedRepository)
+
     private val _uiState = MutableStateFlow(
         FeedUiState(
             isLoading = true,
@@ -26,21 +46,22 @@ class FeedViewModel(
     )
     val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
 
-    private val _effect = MutableSharedFlow<FeedEffect>();
+    private val _effect = MutableSharedFlow<FeedEffect>()
     val effect = _effect.asSharedFlow()
 
     init {
         observeFeeds()
+        observeNotifications()
         refreshFeed(showSuccessMessage = false)
     }
 
-    fun handelIntent(feedIntent: FeedIntent){
-        when(feedIntent){
+    fun handelIntent(feedIntent: FeedIntent) {
+        when (feedIntent) {
             FeedIntent.Refresh -> {
                 refreshFeed(showSuccessMessage = true)
             }
 
-            is FeedIntent.CreatePost ->{
+            is FeedIntent.CreatePost -> {
                 createPost(
                     postUser = feedIntent.user,
                     content = feedIntent.content,
@@ -48,7 +69,7 @@ class FeedViewModel(
                 )
             }
 
-            is FeedIntent.UpdatePost ->{
+            is FeedIntent.UpdatePost -> {
                 updatePost(
                     postId = feedIntent.postId,
                     content = feedIntent.content,
@@ -56,7 +77,7 @@ class FeedViewModel(
                 )
             }
 
-            is FeedIntent.DeletePost ->{
+            is FeedIntent.DeletePost -> {
                 deletePost(feedIntent.postId)
             }
 
@@ -88,15 +109,40 @@ class FeedViewModel(
                 )
             }
 
-            is FeedIntent.ShowMessage ->{
+            is FeedIntent.ShowMessage -> {
                 showMessage(feedIntent.message)
+            }
+
+            is FeedIntent.AddNotification -> {
+                addNotification(feedIntent.feedNotification)
+            }
+
+            is FeedIntent.DeleteCommentNotification -> {
+                deleteCommentNotification(feedIntent.feedNotification)
+            }
+
+            is FeedIntent.DeleteLikeNotification -> {
+                deleteLikeNotification(feedIntent.feedNotification)
+            }
+
+            FeedIntent.ClearAllNotifications -> {
+                clearAllNotifications()
+            }
+
+            is FeedIntent.NavigateTo -> {
+                _uiState.update {
+                    it.copy(currentScreen = feedIntent.screen)
+                }
+                if (feedIntent.screen == Screen.Notification) {
+                    markNotificationsAsRead()
+                }
             }
         }
     }
 
     private fun observeFeeds() {
         viewModelScope.launch {
-            feedRepository.getFeedPosts().collect { newPosts ->
+            getFeedPostsUseCase().collect { newPosts ->
                 _uiState.update {
                     it.copy(
                         posts = newPosts,
@@ -107,24 +153,27 @@ class FeedViewModel(
         }
     }
 
-    private fun loadFeed(){
+    private fun observeNotifications() {
         viewModelScope.launch {
-            feedRepository.refreshFeed()
-            feedRepository.getFeedPosts().collect { newPosts ->
+            getNotificationsUseCase().collect { notifications ->
+                val unreadCount = notifications.count { !it.isRead && !it.isDelete }
                 _uiState.update {
-                    it.copy(posts = newPosts, isLoading = false)
+                    it.copy(
+                        notifications = notifications,
+                        unreadNotificationCount = unreadCount
+                    )
                 }
             }
         }
     }
 
-    private fun refreshFeed(showSuccessMessage: Boolean){
+    private fun refreshFeed(showSuccessMessage: Boolean) {
         viewModelScope.launch {
             _uiState.update {
                 it.copy(isLoading = true)
             }
             runCatching {
-                feedRepository.refreshFeed()
+                refreshFeedUseCase()
             }.onSuccess {
                 _uiState.update {
                     it.copy(isLoading = false)
@@ -139,9 +188,9 @@ class FeedViewModel(
         }
     }
 
-    private fun createPost(postUser: FeedUser, content: String, mediaList: List<FeedMedia>, scrollToIndex: Int = 0){
+    private fun createPost(postUser: FeedUser, content: String, mediaList: List<FeedMedia>, scrollToIndex: Int = 0) {
         viewModelScope.launch {
-            feedRepository.createPost(
+            createPostUseCase(
                 user = postUser,
                 content = content,
                 mediaList = mediaList
@@ -151,9 +200,9 @@ class FeedViewModel(
         }
     }
 
-    private fun updatePost(postId: String,content: String, mediaList: List<FeedMedia>){
+    private fun updatePost(postId: String, content: String, mediaList: List<FeedMedia>) {
         viewModelScope.launch {
-            feedRepository.updatePost(
+            updatePostUseCase(
                 postId = postId,
                 content = content,
                 mediaList = mediaList
@@ -162,16 +211,16 @@ class FeedViewModel(
         }
     }
 
-    private fun deletePost(postId: String){
+    private fun deletePost(postId: String) {
         viewModelScope.launch {
-            feedRepository.deletePost(postId = postId)
+            deletePostUseCase(postId = postId)
             _effect.emit(FeedEffect.ShowMessage("删除成功"))
         }
     }
 
     private fun likePost(postId: String, user: FeedUser) {
         viewModelScope.launch {
-            feedRepository.likePost(
+            likePostUseCase(
                 postId = postId,
                 user = user
             )
@@ -180,7 +229,7 @@ class FeedViewModel(
 
     private fun unlikePost(postId: String, user: FeedUser) {
         viewModelScope.launch {
-            feedRepository.unlikePost(
+            unlikePostUseCase(
                 postId = postId,
                 user = user
             )
@@ -189,9 +238,9 @@ class FeedViewModel(
 
     private fun addComment(postId: String, user: FeedUser, content: String) {
         viewModelScope.launch {
-            feedRepository.addComment(
+            addCommentUseCase(
                 postId = postId,
-                commentUser = user,
+                user = user,
                 content = content
             )
             _effect.emit(FeedEffect.ShowMessage("评论成功"))
@@ -200,14 +249,44 @@ class FeedViewModel(
 
     private fun deleteComment(comment: FeedComment) {
         viewModelScope.launch {
-            feedRepository.deleteComment(comment = comment)
+            deleteCommentUseCase(comment = comment)
             _effect.emit(FeedEffect.ShowMessage("删除评论成功"))
         }
     }
 
-    private fun showMessage(message: String){
+    private fun showMessage(message: String) {
         viewModelScope.launch {
             _effect.emit(FeedEffect.ShowMessage(message))
+        }
+    }
+
+    private fun addNotification(notification: FeedNotification) {
+        viewModelScope.launch {
+            addNotificationUseCase(notification)
+        }
+    }
+
+    private fun deleteCommentNotification(notification: FeedNotification) {
+        viewModelScope.launch {
+            deleteCommentNotificationUseCase(notification)
+        }
+    }
+
+    private fun deleteLikeNotification(notification: FeedNotification) {
+        viewModelScope.launch {
+            deleteLikeNotificationUseCase(notification)
+        }
+    }
+
+    private fun clearAllNotifications() {
+        viewModelScope.launch {
+            clearNotificationsUseCase()
+        }
+    }
+
+    private fun markNotificationsAsRead() {
+        viewModelScope.launch {
+            markNotificationsAsReadUseCase()
         }
     }
 }

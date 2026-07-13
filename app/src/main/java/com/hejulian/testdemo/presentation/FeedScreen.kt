@@ -45,12 +45,14 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hejulian.testdemo.components.MyAlertDialog
-import com.hejulian.testdemo.data.FeedRepository
+import com.hejulian.testdemo.domain.repository.FeedRepository
 import com.hejulian.testdemo.data.FeedRepositoryImpl
 import com.hejulian.testdemo.data.createFakeData
-import com.hejulian.testdemo.data.model.FeedComment
-import com.hejulian.testdemo.data.model.FeedUser
+import com.hejulian.testdemo.domain.model.FeedComment
+import com.hejulian.testdemo.domain.model.FeedNotification
+import com.hejulian.testdemo.domain.model.FeedUser
 import com.hejulian.testdemo.presentation.components.BottomSheet
+import com.hejulian.testdemo.presentation.components.FeedNotificationBar
 import com.hejulian.testdemo.presentation.components.FeedCommentBar
 import com.hejulian.testdemo.presentation.components.FeedPostItem
 import com.hejulian.testdemo.presentation.components.FeedTopBar
@@ -138,9 +140,12 @@ fun FeedScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
+    if (uiState.currentScreen == Screen.Notification) {
+        NotificationScreen(viewModel = viewModel)
+    } else {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = {
             FeedTopBar(
                 onShortClickCreatePost = {
                     showBottomSheet = true
@@ -167,6 +172,19 @@ fun FeedScreen(
                 modifier = Modifier.fillMaxSize(),
                 state = lazyListState
             ) {
+                if (uiState.unreadNotificationCount > 0) {
+                    item {
+                        val latestNotification = uiState.notifications.firstOrNull { !it.isRead && !it.isDelete }
+                        FeedNotificationBar(
+                            unreadCount = uiState.unreadNotificationCount,
+                            latestNotificationUserAvatar = latestNotification?.user?.avatarUrl,
+                            onClick = {
+                                viewModel.handelIntent(FeedIntent.NavigateTo(Screen.Notification))
+                            }
+                        )
+                    }
+                }
+
                 if(!uiState.isLoading&&uiState.posts.isEmpty()){
                     item {
                         Box(
@@ -190,18 +208,24 @@ fun FeedScreen(
                         },
                         onNameClick = { viewModel.handelIntent(FeedIntent.ShowMessage(post.postUser.name)) },
                         onLikeClick = {
-                            if (!post.isLiked) viewModel.handelIntent(
-                                FeedIntent.LikePost(
-                                    post.id,
-                                    uiState.currentUser
+                            if (!post.isLiked) {
+                                //点赞
+                                viewModel.handelIntent(
+                                    FeedIntent.LikePost(
+                                        post.id,
+                                        uiState.currentUser
+                                    )
                                 )
-                            )
-                            else viewModel.handelIntent(
-                                FeedIntent.UnlikePost(
-                                    post.id,
-                                    uiState.currentUser
+                            }
+                            else {
+                                //取消点赞
+                                viewModel.handelIntent(
+                                    FeedIntent.UnlikePost(
+                                        post.id,
+                                        uiState.currentUser
+                                    )
                                 )
-                            )
+                            }
                         },
                         onAddCommentClick = {
                             commentPostId = post.id
@@ -390,6 +414,7 @@ fun FeedScreen(
             }
         }
     }
+}
 }
 
 @Preview
