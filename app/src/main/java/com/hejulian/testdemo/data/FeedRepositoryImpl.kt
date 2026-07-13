@@ -158,8 +158,8 @@ class FeedRepositoryImpl : FeedRepository {
 
     override suspend fun addNotification(feedNotification: FeedNotification) {
         _feedNotifications.update { notifications ->
-            // Avoid duplicate notifications only for active likes on the same post by the same user.
-            // Comment notifications can always be added.
+            // 仅针对同一个用户在同一条动态下的有效点赞通知进行去重处理
+            // 评论通知可以多次添加
             val exists = notifications.any {
                 it.id == feedNotification.id || (
                     feedNotification.isLikeNotification &&

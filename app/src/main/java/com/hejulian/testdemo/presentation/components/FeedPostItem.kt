@@ -25,6 +25,18 @@ import com.hejulian.testdemo.domain.model.FeedComment
 import com.hejulian.testdemo.domain.model.FeedPost
 import com.hejulian.testdemo.domain.model.FeedUser
 import java.util.UUID
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Icon
+import coil3.compose.AsyncImage
+import com.hejulian.testdemo.domain.model.FeedMedia
 
 @Composable
 fun FeedPostItem(
@@ -85,6 +97,11 @@ fun FeedPostItem(
                         color = Color.Black
                     )
                 }
+            }
+
+            if (post.mediaList.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                PostMediaGrid(mediaList = post.mediaList)
             }
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -165,4 +182,78 @@ fun FeedPostItemPreview(){
         onCommentClick = {},
         onCommentUserClick = {}
     )
+}
+
+@Composable
+fun PostMediaGrid(
+    mediaList: List<FeedMedia>,
+    modifier: Modifier = Modifier
+) {
+    if (mediaList.isEmpty()) return
+
+    if (mediaList.size == 1) {
+        val media = mediaList.first()
+        Box(
+            modifier = modifier
+                .size(180.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color(0xFFF5F5F5))
+        ) {
+            val imageUrl = when (media) {
+                is FeedMedia.Image -> media.url
+                is FeedMedia.Video -> media.coverUrl
+            }
+            if (!imageUrl.isNullOrEmpty()) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            if (media is FeedMedia.Video) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = "播放",
+                    tint = Color.White.copy(alpha = 0.8f),
+                    modifier = Modifier
+                        .size(48.dp)
+                        .align(Alignment.Center)
+                )
+            }
+        }
+    } else {
+        val columns = if (mediaList.size == 4) 2 else 3
+        val imageSize = if (columns == 2) 110.dp else 80.dp
+        val spacing = 4.dp
+        val rows = mediaList.chunked(columns)
+        
+        Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+            rows.forEach { rowMedia ->
+                Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
+                    rowMedia.forEach { media ->
+                        Box(
+                            modifier = Modifier
+                                .size(imageSize)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Color(0xFFF5F5F5))
+                        ) {
+                            val imageUrl = when (media) {
+                                is FeedMedia.Image -> media.url
+                                is FeedMedia.Video -> media.coverUrl
+                            }
+                            if (!imageUrl.isNullOrEmpty()) {
+                                AsyncImage(
+                                    model = imageUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

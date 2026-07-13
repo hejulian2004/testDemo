@@ -56,7 +56,17 @@ import com.hejulian.testdemo.presentation.components.FeedNotificationBar
 import com.hejulian.testdemo.presentation.components.FeedCommentBar
 import com.hejulian.testdemo.presentation.components.FeedPostItem
 import com.hejulian.testdemo.presentation.components.FeedTopBar
-import com.hejulian.testdemo.presentation.components.TextPublishScreen
+import com.hejulian.testdemo.presentation.components.PublishScreen
+import com.hejulian.testdemo.domain.model.FeedMedia
+import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.launch
+import android.graphics.Bitmap
+import android.net.Uri
+import java.io.File
+import java.io.FileOutputStream
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
@@ -93,8 +103,40 @@ fun FeedScreen(
         mutableStateOf("")
     }
 
-    var showTextPublish by remember {
-        mutableStateOf(false)
+    val context = LocalContext.current
+    var publishMediaList by remember { mutableStateOf<List<FeedMedia>>(emptyList()) }
+    var isPublishTextOnly by remember { mutableStateOf(false) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(9)
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            val media = uris.map { uri ->
+                val isVideo = context.contentResolver.getType(uri)?.startsWith("video") == true
+                if (isVideo) {
+                    FeedMedia.Video(coverUrl = uri.toString(), videoUrl = uri.toString())
+                } else {
+                    FeedMedia.Image(url = uri.toString())
+                }
+            }
+            publishMediaList = media
+            isPublishTextOnly = false
+            viewModel.handelIntent(FeedIntent.NavigateTo(Screen.Publish))
+        }
+    }
+
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            val file = File(context.cacheDir, "captured_image_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            }
+            publishMediaList = listOf(FeedMedia.Image(url = Uri.fromFile(file).toString()))
+            isPublishTextOnly = false
+            viewModel.handelIntent(FeedIntent.NavigateTo(Screen.Publish))
+        }
     }
 
     var currentTime by remember {
@@ -142,6 +184,24 @@ fun FeedScreen(
 
     if (uiState.currentScreen == Screen.Notification) {
         NotificationScreen(viewModel = viewModel)
+    } else if (uiState.currentScreen == Screen.Publish) {
+        PublishScreen(
+            initialMediaList = publishMediaList,
+            isTextOnly = isPublishTextOnly,
+            onCancelClick = {
+                viewModel.handelIntent(FeedIntent.NavigateTo(Screen.Feed))
+            },
+            onPostClick = { textContent, mediaList ->
+                viewModel.handelIntent(
+                    FeedIntent.CreatePost(
+                        user = uiState.currentUser,
+                        content = textContent,
+                        mediaList = mediaList
+                    )
+                )
+                viewModel.handelIntent(FeedIntent.NavigateTo(Screen.Feed))
+            }
+        )
     } else {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -151,7 +211,9 @@ fun FeedScreen(
                     showBottomSheet = true
                 },
                 onLongClickCreatePost = {
-                    showTextPublish = true
+                    publishMediaList = emptyList()
+                    isPublishTextOnly = true
+                    viewModel.handelIntent(FeedIntent.NavigateTo(Screen.Publish))
                 }
             )
         },
@@ -275,10 +337,14 @@ fun FeedScreen(
         ) {
             BottomSheet(
                 onShootClick = {
-
+                    showBottomSheet = false
+                    takePictureLauncher.launch()
                 },
                 onChooseClick = {
-
+                    showBottomSheet = false
+                    photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
+                    )
                 },
                 onCancelClick = {
                     showBottomSheet = false
@@ -335,28 +401,7 @@ fun FeedScreen(
         )
     }
 
-    //发布文字内容
-    AnimatedVisibility(
-        visible = showTextPublish,
-        enter = slideInVertically(initialOffsetY = {it}),
-        exit = slideOutVertically(targetOffsetY = {it})
-    ) {
-        TextPublishScreen(
-            onCancelClick = {
-                showTextPublish = false
-            },
-            onPostClick = { textContent ->
-                viewModel.handelIntent(
-                    FeedIntent.CreatePost(
-                        user = uiState.currentUser,
-                        content = textContent,
-                        mediaList = emptyList()
-                    )
-                )
-                showTextPublish = false
-            }
-        )
-    }
+
 
     //发布评论
     val focusManager = LocalFocusManager.current

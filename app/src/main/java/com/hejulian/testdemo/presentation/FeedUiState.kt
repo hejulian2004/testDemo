@@ -5,7 +5,7 @@ import com.hejulian.testdemo.domain.model.FeedPost
 import com.hejulian.testdemo.domain.model.FeedUser
 
 enum class Screen {
-    Feed, Notification
+    Feed, Notification, Publish
 }
 
 data class FeedUiState(

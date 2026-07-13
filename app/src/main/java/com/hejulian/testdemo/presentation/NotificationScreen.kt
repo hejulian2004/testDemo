@@ -42,6 +42,9 @@ import com.hejulian.testdemo.domain.model.FeedMedia
 import com.hejulian.testdemo.domain.model.FeedNotification
 import com.hejulian.testdemo.presentation.components.Avatar
 import com.hejulian.testdemo.utils.TimeUtils
+import androidx.compose.ui.tooling.preview.Preview
+import com.hejulian.testdemo.data.FeedRepositoryImpl
+import com.hejulian.testdemo.domain.model.FeedUser
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +53,7 @@ fun NotificationScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    // Show both read and unread notifications that are not deleted
+    // 获取所有未删除的已读和未读通知
     val notifications = uiState.notifications.filter { !it.isDelete }
 
     Scaffold(
@@ -64,7 +67,7 @@ fun NotificationScreen(
                     .padding(horizontal = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Back Button
+                // 返回按钮
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -95,7 +98,7 @@ fun NotificationScreen(
                     }
                 }
 
-                // Title
+                // 标题
                 Text(
                     text = "消息",
                     fontSize = 18.sp,
@@ -103,7 +106,7 @@ fun NotificationScreen(
                     color = Color.Black
                 )
 
-                // Clear Button
+                // 清空按钮
                 if (notifications.isNotEmpty()) {
                     TextButton(
                         onClick = {
@@ -172,7 +175,7 @@ private fun NotificationItem(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Left: Avatar
+        // 左侧：头像
         Avatar(
             url = notification.user.avatarUrl,
             size = 42.dp,
@@ -181,7 +184,7 @@ private fun NotificationItem(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Center: User name, action and time
+        // 中间：用户名、动作和时间
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -219,7 +222,7 @@ private fun NotificationItem(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Right: Original Post Preview
+        // 右侧：原始动态预览
         Box(
             modifier = Modifier
                 .size(50.dp)
@@ -261,4 +264,13 @@ private fun PostTextPreview(text: String) {
         overflow = TextOverflow.Ellipsis,
         lineHeight = 13.sp
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun NotificationScreenPreview() {
+    val fakeRepo = FeedRepositoryImpl()
+    val fakeUser = FeedUser(id = "1", name = "测试用户", avatarUrl = "")
+    val fakeViewModel = FeedViewModel(fakeRepo, fakeUser)
+    NotificationScreen(viewModel = fakeViewModel)
 }

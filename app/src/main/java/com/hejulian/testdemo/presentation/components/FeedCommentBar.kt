@@ -16,6 +16,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -114,4 +115,14 @@ fun FeedCommentBar(
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun FeedCommentBarPreview() {
+    FeedCommentBar(
+        value = "测试评论内容",
+        onValueChange = {},
+        onSendClick = {}
+    )
 }

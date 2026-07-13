@@ -21,7 +21,7 @@ class FeedViewModel(
     currentUser: FeedUser
 ) : ViewModel() {
 
-    // Clean Architecture Use Cases instantiated internally for simple dependency injection
+    // 洁净架构 (Clean Architecture) 用例 (Use Cases) 在内部实例化，方便简单依赖注入
     private val getFeedPostsUseCase = GetFeedPostsUseCase(feedRepository)
     private val refreshFeedUseCase = RefreshFeedUseCase(feedRepository)
     private val likePostUseCase = LikePostUseCase(feedRepository)
