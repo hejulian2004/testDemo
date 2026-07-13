@@ -324,7 +324,8 @@ fun PostMediaGrid(
         val media = mediaList.first()
         Box(
             modifier = modifier
-                .size(180.dp)
+                .fillMaxWidth(2f / 3f)
+                .aspectRatio(1f)
                 .clip(RoundedCornerShape(4.dp))
                 .background(Color(0xFFF5F5F5))
                 .clickable {
