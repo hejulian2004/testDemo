@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.HorizontalDivider
@@ -34,7 +36,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.viewinterop.AndroidView
 import coil3.compose.AsyncImage
 import com.hejulian.testdemo.domain.model.FeedMedia
 
@@ -192,11 +203,122 @@ fun FeedPostItemPreview(){
 }
 
 @Composable
+fun VideoPlayerDialog(
+    videoUrl: String,
+    onDismissRequest: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = androidx.compose.ui.window.DialogProperties(
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            contentAlignment = Alignment.Center
+        ) {
+            AndroidView(
+                factory = { context ->
+                    android.widget.VideoView(context).apply {
+                        val mediaController = android.widget.MediaController(context)
+                        mediaController.setAnchorView(this)
+                        setMediaController(mediaController)
+                        setVideoPath(videoUrl)
+                        setOnPreparedListener { mp ->
+                            mp.isLooping = true
+                            start()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+
+            IconButton(
+                onClick = onDismissRequest,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "关闭",
+                    tint = Color.White
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ImagePreviewDialog(
+    imageUrl: String,
+    onDismissRequest: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = androidx.compose.ui.window.DialogProperties(
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .clickable { onDismissRequest() },
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = "图片预览",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                contentScale = ContentScale.Fit
+            )
+
+            IconButton(
+                onClick = onDismissRequest,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "关闭",
+                    tint = Color.White
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun PostMediaGrid(
     mediaList: List<FeedMedia>,
     modifier: Modifier = Modifier
 ) {
     if (mediaList.isEmpty()) return
+
+    var activeImageUrl by remember { mutableStateOf<String?>(null) }
+    var activeVideoUrl by remember { mutableStateOf<String?>(null) }
+
+    if (activeImageUrl != null) {
+        ImagePreviewDialog(
+            imageUrl = activeImageUrl!!,
+            onDismissRequest = { activeImageUrl = null }
+        )
+    }
+
+    if (activeVideoUrl != null) {
+        VideoPlayerDialog(
+            videoUrl = activeVideoUrl!!,
+            onDismissRequest = { activeVideoUrl = null }
+        )
+    }
 
     if (mediaList.size == 1) {
         val media = mediaList.first()
@@ -205,15 +327,26 @@ fun PostMediaGrid(
                 .size(180.dp)
                 .clip(RoundedCornerShape(4.dp))
                 .background(Color(0xFFF5F5F5))
+                .clickable {
+                    if (media is FeedMedia.Video) {
+                        activeVideoUrl = media.videoUrl
+                    } else if (media is FeedMedia.Image) {
+                        activeImageUrl = media.url
+                    }
+                }
         ) {
-            val imageUrl = when (media) {
-                is FeedMedia.Image -> media.url
-                is FeedMedia.Video -> media.coverUrl
-            }
-            if (!imageUrl.isNullOrEmpty()) {
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = null,
+            if (media is FeedMedia.Image) {
+                if (media.url.isNotEmpty()) {
+                    AsyncImage(
+                        model = media.url,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            } else if (media is FeedMedia.Video) {
+                VideoThumbnail(
+                    videoUrl = media.videoUrl,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
@@ -231,32 +364,64 @@ fun PostMediaGrid(
         }
     } else {
         val columns = if (mediaList.size == 4) 2 else 3
-        val imageSize = if (columns == 2) 110.dp else 80.dp
         val spacing = 4.dp
         val rows = mediaList.chunked(columns)
         
-        Column(verticalArrangement = Arrangement.spacedBy(spacing)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(spacing),
+            modifier = Modifier.fillMaxWidth()
+        ) {
             rows.forEach { rowMedia ->
-                Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
-                    rowMedia.forEach { media ->
-                        Box(
-                            modifier = Modifier
-                                .size(imageSize)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(Color(0xFFF5F5F5))
-                        ) {
-                            val imageUrl = when (media) {
-                                is FeedMedia.Image -> media.url
-                                is FeedMedia.Video -> media.coverUrl
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    for (i in 0 until columns) {
+                        if (i < rowMedia.size) {
+                            val media = rowMedia[i]
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color(0xFFF5F5F5))
+                                    .clickable {
+                                        if (media is FeedMedia.Video) {
+                                            activeVideoUrl = media.videoUrl
+                                        } else if (media is FeedMedia.Image) {
+                                            activeImageUrl = media.url
+                                        }
+                                    }
+                            ) {
+                                if (media is FeedMedia.Image) {
+                                    if (media.url.isNotEmpty()) {
+                                        AsyncImage(
+                                            model = media.url,
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                } else if (media is FeedMedia.Video) {
+                                    VideoThumbnail(
+                                        videoUrl = media.videoUrl,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                                if (media is FeedMedia.Video) {
+                                    Icon(
+                                        imageVector = Icons.Filled.PlayArrow,
+                                        contentDescription = "播放",
+                                        tint = Color.White.copy(alpha = 0.8f),
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .align(Alignment.Center)
+                                    )
+                                }
                             }
-                            if (!imageUrl.isNullOrEmpty()) {
-                                AsyncImage(
-                                    model = imageUrl,
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
+                        } else {
+                            Box(modifier = Modifier.weight(1f))
                         }
                     }
                 }

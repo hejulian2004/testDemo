@@ -13,7 +13,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun BottomSheet(
     modifier: Modifier = Modifier,
-    onShootClick: () -> Unit,
+    onTakePhotoClick: () -> Unit,
+    onRecordVideoClick: () -> Unit,
     onChooseClick: () -> Unit,
     onCancelClick: () -> Unit
 ) {
@@ -23,20 +24,24 @@ fun BottomSheet(
             .padding(bottom = 32.dp)
     ) {
         BottomSheetItem(
-            text = "拍摄（照片或视频）",
-            onClick = {
-                onShootClick()
-            }
+            text = "拍摄照片",
+            onClick = onTakePhotoClick
         )
         HorizontalDivider(
             thickness = 0.5.dp,
             color = Color.LightGray
         )
         BottomSheetItem(
-            text = "从手机相机选择",
-            onClick = {
-                onChooseClick()
-            }
+            text = "录制视频",
+            onClick = onRecordVideoClick
+        )
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = Color.LightGray
+        )
+        BottomSheetItem(
+            text = "从手机相册选择",
+            onClick = onChooseClick
         )
         HorizontalDivider(
             thickness = 0.5.dp,
@@ -44,9 +49,7 @@ fun BottomSheet(
         )
         BottomSheetItem(
             text = "取消",
-            onClick = {
-                onCancelClick()
-            }
+            onClick = onCancelClick
         )
     }
 }
@@ -55,7 +58,8 @@ fun BottomSheet(
 @Composable
 fun BottomSheetPreview() {
     BottomSheet(
-        onShootClick = {},
+        onTakePhotoClick = {},
+        onRecordVideoClick = {},
         onChooseClick = {},
         onCancelClick = {}
     )

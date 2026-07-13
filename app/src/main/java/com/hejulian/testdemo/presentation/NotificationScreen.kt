@@ -41,6 +41,7 @@ import coil3.compose.AsyncImage
 import com.hejulian.testdemo.domain.model.FeedMedia
 import com.hejulian.testdemo.domain.model.FeedNotification
 import com.hejulian.testdemo.presentation.components.Avatar
+import com.hejulian.testdemo.presentation.components.VideoThumbnail
 import com.hejulian.testdemo.utils.TimeUtils
 import androidx.compose.ui.tooling.preview.Preview
 import com.hejulian.testdemo.data.FeedRepositoryImpl
@@ -233,19 +234,23 @@ private fun NotificationItem(
         ) {
             val media = notification.post.mediaList.firstOrNull()
             if (media != null) {
-                val imageUrl = when (media) {
-                    is FeedMedia.Image -> media.url
-                    is FeedMedia.Video -> media.coverUrl
-                }
-                if (!imageUrl.isNullOrEmpty()) {
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = "动态配图",
+                if (media is FeedMedia.Image) {
+                    if (media.url.isNotEmpty()) {
+                        AsyncImage(
+                            model = media.url,
+                            contentDescription = "动态配图",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        PostTextPreview(text = notification.post.content)
+                    }
+                } else if (media is FeedMedia.Video) {
+                    VideoThumbnail(
+                        videoUrl = media.videoUrl,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
-                } else {
-                    PostTextPreview(text = notification.post.content)
                 }
             } else {
                 PostTextPreview(text = notification.post.content)

@@ -4,18 +4,21 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import com.google.gson.Gson
+import com.google.gson.*
+import com.hejulian.testdemo.domain.model.FeedMedia
 import com.hejulian.testdemo.domain.model.FeedNotification
 import com.hejulian.testdemo.domain.model.FeedPost
+import java.lang.reflect.Type
 
 class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
-    private val gson = Gson()
+    private val gson: Gson = GsonBuilder()
+        .registerTypeAdapter(FeedMedia::class.java, FeedMediaAdapter())
+        .create()
 
     companion object {
         private const val DATABASE_NAME = "moments_cache.db"
-        private const val DATABASE_VERSION = 2
-
+        private const val DATABASE_VERSION = 3
         private const val TABLE_POSTS = "feed_posts"
         private const val KEY_ID = "id"
         private const val KEY_JSON = "post_json"
@@ -41,7 +44,6 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-
     }
 
     fun getAllPosts(): List<FeedPost> {
@@ -68,7 +70,7 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         }
         return postsList
     }
-
+    
     fun insertPosts(posts: List<FeedPost>) {
         val db = this.writableDatabase
         db.beginTransaction()
@@ -91,7 +93,6 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
         val db = this.writableDatabase
         db.delete(TABLE_POSTS, null, null)
     }
-
 
     fun getAllNotifications(): List<FeedNotification> {
         val notificationsList = mutableListOf<FeedNotification>()
@@ -139,5 +140,56 @@ class LocalDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE
     fun deleteAllNotifications() {
         val db = this.writableDatabase
         db.delete(TABLE_NOTIFICATIONS, null, null)
+    }
+}
+
+class FeedMediaAdapter : JsonSerializer<FeedMedia>, JsonDeserializer<FeedMedia> {
+    override fun serialize(src: FeedMedia, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
+        val jsonObject = JsonObject()
+        when (src) {
+            is FeedMedia.Image -> {
+                jsonObject.addProperty("type", "image")
+                jsonObject.addProperty("url", src.url)
+                src.width?.let { jsonObject.addProperty("width", it) }
+                src.height?.let { jsonObject.addProperty("height", it) }
+            }
+            is FeedMedia.Video -> {
+                jsonObject.addProperty("type", "video")
+                jsonObject.addProperty("videoUrl", src.videoUrl)
+                src.coverUrl?.let { jsonObject.addProperty("coverUrl", it) }
+                src.durationSecond?.let { jsonObject.addProperty("durationSecond", it) }
+                src.width?.let { jsonObject.addProperty("width", it) }
+                src.height?.let { jsonObject.addProperty("height", it) }
+            }
+        }
+        return jsonObject
+    }
+
+    override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): FeedMedia {
+        val jsonObject = json.asJsonObject
+        val type = jsonObject.get("type")?.asString ?: "image"
+        return if (type == "video") {
+            val videoUrl = jsonObject.get("videoUrl")?.asString ?: ""
+            val coverUrl = jsonObject.get("coverUrl")?.asString
+            val durationSecond = jsonObject.get("durationSecond")?.asInt
+            val width = jsonObject.get("width")?.asInt
+            val height = jsonObject.get("height")?.asInt
+            FeedMedia.Video(
+                coverUrl = coverUrl,
+                videoUrl = videoUrl,
+                durationSecond = durationSecond,
+                width = width,
+                height = height
+            )
+        } else {
+            val url = jsonObject.get("url")?.asString ?: ""
+            val width = jsonObject.get("width")?.asInt
+            val height = jsonObject.get("height")?.asInt
+            FeedMedia.Image(
+                url = url,
+                width = width,
+                height = height
+            )
+        }
     }
 }

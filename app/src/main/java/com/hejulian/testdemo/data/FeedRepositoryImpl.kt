@@ -180,7 +180,11 @@ class FeedRepositoryImpl : FeedRepository {
         _feedPosts.update { posts ->
             posts.filterNot { it.id == postId }
         }
+        _feedNotifications.update { notifications ->
+            notifications.filterNot { it.post.id == postId }
+        }
         persistPostsToDb()
+        persistNotificationsToDb()
     }
 
     override suspend fun updatePost(

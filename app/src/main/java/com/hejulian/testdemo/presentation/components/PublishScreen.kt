@@ -7,7 +7,9 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -42,6 +45,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,7 +65,7 @@ import com.hejulian.testdemo.domain.model.FeedMedia
 import java.io.File
 import java.io.FileOutputStream
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PublishScreen(
     initialMediaList: List<FeedMedia>,
@@ -66,9 +75,55 @@ fun PublishScreen(
     isTextOnly: Boolean = false
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var textContent by remember { mutableStateOf("") }
     var selectedMedia by remember { mutableStateOf(initialMediaList) }
     var mediaToDelete by remember { mutableStateOf<FeedMedia?>(null) }
+    var activeImageUrl by remember { mutableStateOf<String?>(null) }
+    var activeVideoUrl by remember { mutableStateOf<String?>(null) }
+    var isPublishing by remember { mutableStateOf(false) }
+
+    if (isPublishing) {
+        Dialog(
+            onDismissRequest = {},
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .background(Color.White, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        color = Color(0xFF07C160)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(text = "正在发表...", fontSize = 14.sp, color = Color.Gray)
+                }
+            }
+        }
+    }
+
+    if (activeImageUrl != null) {
+        ImagePreviewDialog(
+            imageUrl = activeImageUrl!!,
+            onDismissRequest = { activeImageUrl = null }
+        )
+    }
+
+    if (activeVideoUrl != null) {
+        VideoPlayerDialog(
+            videoUrl = activeVideoUrl!!,
+            onDismissRequest = { activeVideoUrl = null }
+        )
+    }
 
     // 发布页内部用于添加更多照片/视频的启动器
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -97,6 +152,18 @@ fun PublishScreen(
             }
             val newMedia = FeedMedia.Image(url = Uri.fromFile(file).toString())
             selectedMedia = (selectedMedia + newMedia).take(9)
+        }
+    }
+
+    val takeVideoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val videoUri = result.data?.data
+            if (videoUri != null) {
+                val newMedia = FeedMedia.Video(coverUrl = videoUri.toString(), videoUrl = videoUri.toString())
+                selectedMedia = (selectedMedia + newMedia).take(9)
+            }
         }
     }
 
@@ -141,7 +208,30 @@ fun PublishScreen(
                     enabled = textContent.isNotBlank() || (!isTextOnly && selectedMedia.isNotEmpty()),
                     modifier = Modifier.align(Alignment.CenterEnd),
                     onClick = {
-                        onPostClick(textContent, selectedMedia)
+                        isPublishing = true
+                        coroutineScope.launch {
+                            val persistentMedia = withContext(Dispatchers.IO) {
+                                selectedMedia.map { media ->
+                                    val isVideo = media is FeedMedia.Video
+                                    val uriString = when (media) {
+                                        is FeedMedia.Image -> media.url
+                                        is FeedMedia.Video -> media.videoUrl
+                                    }
+                                    if (uriString.startsWith("content://")) {
+                                        val localPath = copyUriToLocalCache(context, Uri.parse(uriString), isVideo)
+                                        if (isVideo) {
+                                            FeedMedia.Video(coverUrl = localPath, videoUrl = localPath)
+                                        } else {
+                                            FeedMedia.Image(url = localPath)
+                                        }
+                                    } else {
+                                        media
+                                    }
+                                }
+                            }
+                            onPostClick(textContent, persistentMedia)
+                            isPublishing = false
+                        }
                     }
                 ) {
                     Text(
@@ -181,12 +271,7 @@ fun PublishScreen(
                 if (!isTextOnly) {
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 媒体网格（3列）
                     val spacing = 8.dp
-                    val imageSize = 90.dp
-                    val totalItems = selectedMedia.size + (if (selectedMedia.size < 9) 1 else 0)
-                    val itemsList = selectedMedia.toMutableList()
-
                     val rows = if (selectedMedia.size < 9) {
                         (selectedMedia + null).chunked(3)
                     } else {
@@ -198,61 +283,82 @@ fun PublishScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         rows.forEach { rowItems ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
-                                rowItems.forEach { media ->
-                                    if (media == null) {
-                                        // “+” 添加按钮
-                                        Box(
-                                            modifier = Modifier
-                                                .size(imageSize)
-                                                .clip(RoundedCornerShape(4.dp))
-                                                .background(Color(0xFFF7F7F7))
-                                                .clickable {
-                                                    showAddMoreBottomSheet = true
-                                                },
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Add,
-                                                contentDescription = "添加",
-                                                tint = Color.Gray,
-                                                modifier = Modifier.size(36.dp)
-                                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(spacing),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                for (i in 0 until 3) {
+                                    if (i < rowItems.size) {
+                                        val media = rowItems[i]
+                                        if (media == null) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .aspectRatio(1f)
+                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .background(Color(0xFFF7F7F7))
+                                                    .clickable {
+                                                        showAddMoreBottomSheet = true
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Add,
+                                                    contentDescription = "添加",
+                                                    tint = Color.Gray,
+                                                    modifier = Modifier.size(36.dp)
+                                                )
+                                            }
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .aspectRatio(1f)
+                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .background(Color(0xFFF5F5F5))
+                                                    .combinedClickable(
+                                                        onClick = {
+                                                            if (media is FeedMedia.Video) {
+                                                                activeVideoUrl = media.videoUrl
+                                                            } else if (media is FeedMedia.Image) {
+                                                                activeImageUrl = media.url
+                                                            }
+                                                        },
+                                                        onLongClick = {
+                                                            mediaToDelete = media
+                                                        }
+                                                    )
+                                            ) {
+                                                if (media is FeedMedia.Image) {
+                                                    if (media.url.isNotEmpty()) {
+                                                        AsyncImage(
+                                                            model = media.url,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.fillMaxSize(),
+                                                            contentScale = ContentScale.Crop
+                                                        )
+                                                    }
+                                                } else if (media is FeedMedia.Video) {
+                                                    VideoThumbnail(
+                                                        videoUrl = media.videoUrl,
+                                                        modifier = Modifier.fillMaxSize(),
+                                                        contentScale = ContentScale.Crop
+                                                    )
+                                                }
+                                                if (media is FeedMedia.Video) {
+                                                    Icon(
+                                                        imageVector = Icons.Filled.PlayArrow,
+                                                        contentDescription = "视频",
+                                                        tint = Color.White,
+                                                        modifier = Modifier
+                                                            .size(28.dp)
+                                                            .align(Alignment.Center)
+                                                    )
+                                                }
+                                            }
                                         }
                                     } else {
-                                        // 媒体文件预览
-                                        Box(
-                                            modifier = Modifier
-                                                .size(imageSize)
-                                                .clip(RoundedCornerShape(4.dp))
-                                                .background(Color(0xFFF5F5F5))
-                                                .clickable {
-                                                    mediaToDelete = media
-                                                }
-                                        ) {
-                                            val imageUrl = when (media) {
-                                                is FeedMedia.Image -> media.url
-                                                is FeedMedia.Video -> media.coverUrl
-                                            }
-                                            if (!imageUrl.isNullOrEmpty()) {
-                                                AsyncImage(
-                                                    model = imageUrl,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    contentScale = ContentScale.Crop
-                                                )
-                                            }
-                                            if (media is FeedMedia.Video) {
-                                                Icon(
-                                                    imageVector = Icons.Filled.PlayArrow,
-                                                    contentDescription = "视频",
-                                                    tint = Color.White,
-                                                    modifier = Modifier
-                                                        .size(28.dp)
-                                                        .align(Alignment.Center)
-                                                )
-                                            }
-                                        }
+                                        Box(modifier = Modifier.weight(1f))
                                     }
                                 }
                             }
@@ -265,10 +371,11 @@ fun PublishScreen(
 
     // 删除确认弹窗
     if (mediaToDelete != null) {
+        val isVideo = mediaToDelete is FeedMedia.Video
         AlertDialog(
             onDismissRequest = { mediaToDelete = null },
             title = { Text("确认删除") },
-            text = { Text("要删除这张照片吗？") },
+            text = { Text(if (isVideo) "要删除这段视频吗？" else "要删除这张照片吗？") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -294,9 +401,14 @@ fun PublishScreen(
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
             com.hejulian.testdemo.presentation.components.BottomSheet(
-                onShootClick = {
+                onTakePhotoClick = {
                     showAddMoreBottomSheet = false
                     takePictureLauncher.launch()
+                },
+                onRecordVideoClick = {
+                    showAddMoreBottomSheet = false
+                    val intent = android.content.Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE)
+                    takeVideoLauncher.launch(intent)
                 },
                 onChooseClick = {
                     showAddMoreBottomSheet = false
@@ -331,4 +443,23 @@ fun PublishScreenTextOnlyPreview() {
         onCancelClick = {},
         onPostClick = { _, _ -> }
     )
+}
+
+private fun copyUriToLocalCache(context: android.content.Context, uri: Uri, isVideo: Boolean): String {
+    val extension = if (isVideo) "mp4" else "jpg"
+    val localFile = java.io.File(
+        context.cacheDir,
+        "picked_media_${System.currentTimeMillis()}_${java.util.UUID.randomUUID()}.$extension"
+    )
+    try {
+        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            java.io.FileOutputStream(localFile).use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+        }
+        return Uri.fromFile(localFile).toString()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return uri.toString()
+    }
 }

@@ -139,6 +139,19 @@ fun FeedScreen(
         }
     }
 
+    val takeVideoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val videoUri = result.data?.data
+            if (videoUri != null) {
+                publishMediaList = listOf(FeedMedia.Video(coverUrl = videoUri.toString(), videoUrl = videoUri.toString()))
+                isPublishTextOnly = false
+                viewModel.handelIntent(FeedIntent.NavigateTo(Screen.Publish))
+            }
+        }
+    }
+
     var currentTime by remember {
         mutableLongStateOf(System.currentTimeMillis())
     }
@@ -336,9 +349,14 @@ fun FeedScreen(
             }
         ) {
             BottomSheet(
-                onShootClick = {
+                onTakePhotoClick = {
                     showBottomSheet = false
                     takePictureLauncher.launch()
+                },
+                onRecordVideoClick = {
+                    showBottomSheet = false
+                    val intent = android.content.Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE)
+                    takeVideoLauncher.launch(intent)
                 },
                 onChooseClick = {
                     showBottomSheet = false

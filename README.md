@@ -25,6 +25,7 @@ Test类别：移动端-kotlin
 6.在网络框架（retrofit）和Room本地数据库（复杂数据用Gson序列化）的编写时用借助Gemini辅助
 7.kotlin、compose等组件的相关依赖引入有使用Gemini
 8.debug过程中相关的报错有使用Gemini和ChatGPT
+9.视频/图片预览和显示的部分代码有借助Gemini
 
 后续优化/迭代方向:
 1.post展示的时候可以考虑引入分页设计
