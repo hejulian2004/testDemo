@@ -1,23 +1,34 @@
 package com.hejulian.testdemo.data
 
+import com.hejulian.testdemo.BaseApplication
+import com.hejulian.testdemo.data.database.LocalDatabaseHelper
 import com.hejulian.testdemo.domain.model.FeedComment
 import com.hejulian.testdemo.domain.model.FeedMedia
 import com.hejulian.testdemo.domain.model.FeedNotification
 import com.hejulian.testdemo.domain.model.FeedPost
 import com.hejulian.testdemo.domain.model.FeedUser
 import com.hejulian.testdemo.domain.repository.FeedRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
 class FeedRepositoryImpl : FeedRepository {
+    private val dbHelper = LocalDatabaseHelper(BaseApplication.context)
+
     private val _feedPosts = MutableStateFlow<List<FeedPost>>(emptyList())
 
     private val _feedNotifications = MutableStateFlow<List<FeedNotification>>(emptyList())
+
+    init {
+        _feedPosts.value = dbHelper.getAllPosts()
+        _feedNotifications.value = dbHelper.getAllNotifications()
+    }
 
     override fun getFeedPosts(): Flow<List<FeedPost>> {
         return _feedPosts.map { posts ->
@@ -33,7 +44,31 @@ class FeedRepositoryImpl : FeedRepository {
 
     override suspend fun refreshFeed() {
         delay(1000.milliseconds)
-        _feedPosts.value = createFakeData().sortedByDescending { it.createTime }
+        val networkPosts = try {
+            com.hejulian.testdemo.data.network.RetrofitClient.service.getFeedPosts()
+        } catch (e: Exception) {
+            null
+        }
+
+        if (networkPosts != null) {
+            dbHelper.deleteAllPosts()
+            dbHelper.insertPosts(networkPosts)
+            _feedPosts.value = networkPosts.sortedByDescending { it.createTime }
+        } else {
+            val localPosts = dbHelper.getAllPosts()
+            if (localPosts.isNotEmpty()) {
+                _feedPosts.value = localPosts
+            } else {
+                _feedPosts.value = createFakeData().sortedByDescending { it.createTime }
+            }
+        }
+    }
+
+    private suspend fun persistPostsToDb() {
+        withContext(Dispatchers.IO) {
+            dbHelper.deleteAllPosts()
+            dbHelper.insertPosts(_feedPosts.value)
+        }
     }
 
     override suspend fun likePost(
@@ -54,6 +89,7 @@ class FeedRepositoryImpl : FeedRepository {
                 } else it
             }
         }
+        persistPostsToDb()
         return "点赞成功"
     }
 
@@ -82,6 +118,7 @@ class FeedRepositoryImpl : FeedRepository {
                 } else p
             }
         }
+        persistPostsToDb()
         return "取消点赞成功"
     }
 
@@ -102,6 +139,7 @@ class FeedRepositoryImpl : FeedRepository {
                 } else it
             }
         }
+        persistPostsToDb()
         return "评论发布成功"
     }
 
@@ -117,6 +155,7 @@ class FeedRepositoryImpl : FeedRepository {
                 } else post
             }
         }
+        persistPostsToDb()
         return "评论删除成功"
     }
 
@@ -134,12 +173,14 @@ class FeedRepositoryImpl : FeedRepository {
         _feedPosts.update { posts ->
             posts + newPost
         }
+        persistPostsToDb()
     }
 
     override suspend fun deletePost(postId: String) {
         _feedPosts.update { posts ->
             posts.filterNot { it.id == postId }
         }
+        persistPostsToDb()
     }
 
     override suspend fun updatePost(
@@ -154,12 +195,18 @@ class FeedRepositoryImpl : FeedRepository {
                 } else post
             }
         }
+        persistPostsToDb()
+    }
+
+    private suspend fun persistNotificationsToDb() {
+        withContext(Dispatchers.IO) {
+            dbHelper.deleteAllNotifications()
+            dbHelper.insertNotifications(_feedNotifications.value)
+        }
     }
 
     override suspend fun addNotification(feedNotification: FeedNotification) {
         _feedNotifications.update { notifications ->
-            // 仅针对同一个用户在同一条动态下的有效点赞通知进行去重处理
-            // 评论通知可以多次添加
             val exists = notifications.any {
                 it.id == feedNotification.id || (
                     feedNotification.isLikeNotification &&
@@ -171,6 +218,7 @@ class FeedRepositoryImpl : FeedRepository {
             }
             if (exists) notifications else notifications + feedNotification
         }
+        persistNotificationsToDb()
     }
 
     override suspend fun deleteCommentNotification(feedNotification: FeedNotification) {
@@ -181,12 +229,14 @@ class FeedRepositoryImpl : FeedRepository {
                 } else notification
             }
         }
+        persistNotificationsToDb()
     }
 
     override suspend fun deleteLikeNotification(feedNotification: FeedNotification) {
         _feedNotifications.update { notifications ->
             notifications.filterNot { it.id == feedNotification.id || (it.post.id == feedNotification.post.id && it.user.id == feedNotification.user.id && it.isLikeNotification) }
         }
+        persistNotificationsToDb()
     }
 
     override fun getNotifications(): Flow<List<FeedNotification>> {
@@ -199,6 +249,7 @@ class FeedRepositoryImpl : FeedRepository {
         _feedNotifications.update { notifications ->
             notifications.map { it.copy(isRead = true) }
         }
+        persistNotificationsToDb()
     }
 }
 

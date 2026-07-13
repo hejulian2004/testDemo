@@ -99,9 +99,16 @@ fun FeedPostItem(
                 }
             }
 
-            if (post.mediaList.isNotEmpty()) {
+            val validMediaList = post.mediaList?.filter {
+                when (it) {
+                    is FeedMedia.Image -> !it.url.isNullOrBlank()
+                    is FeedMedia.Video -> !it.videoUrl.isNullOrBlank() || !it.coverUrl.isNullOrBlank()
+                }
+            } ?: emptyList()
+
+            if (validMediaList.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                PostMediaGrid(mediaList = post.mediaList)
+                PostMediaGrid(mediaList = validMediaList)
             }
 
             Spacer(modifier = Modifier.height(6.dp))
