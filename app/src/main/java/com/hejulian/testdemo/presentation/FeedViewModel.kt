@@ -15,13 +15,16 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.hejulian.testdemo.domain.analytics.AnalyticsTracker
+import com.hejulian.testdemo.domain.analytics.AnalyticsEvents
+import com.hejulian.testdemo.domain.analytics.AnalyticsParams
+import com.hejulian.testdemo.data.analytics.LogAnalyticsTracker
 
 class FeedViewModel(
     private val feedRepository: FeedRepository,
-    currentUser: FeedUser
+    currentUser: FeedUser,
+    private val analyticsTracker: AnalyticsTracker = LogAnalyticsTracker()
 ) : ViewModel() {
-
-    // 洁净架构 (Clean Architecture) 用例 (Use Cases) 在内部实例化，方便简单依赖注入
     private val getFeedPostsUseCase = GetFeedPostsUseCase(feedRepository)
     private val refreshFeedUseCase = RefreshFeedUseCase(feedRepository)
     private val likePostUseCase = LikePostUseCase(feedRepository)
@@ -53,15 +56,28 @@ class FeedViewModel(
         observeFeeds()
         observeNotifications()
         refreshFeed(showSuccessMessage = false)
+        analyticsTracker.trackEvent(
+            AnalyticsEvents.OPEN_FEED,
+            mapOf(AnalyticsParams.USER_ID to currentUser.id)
+        )
     }
 
     fun handelIntent(feedIntent: FeedIntent) {
         when (feedIntent) {
             FeedIntent.Refresh -> {
+                analyticsTracker.trackEvent(AnalyticsEvents.REFRESH_FEED)
                 refreshFeed(showSuccessMessage = true)
             }
 
             is FeedIntent.CreatePost -> {
+                analyticsTracker.trackEvent(
+                    AnalyticsEvents.CREATE_POST,
+                    mapOf(
+                        AnalyticsParams.USER_ID to feedIntent.user.id,
+                        AnalyticsParams.MEDIA_COUNT to feedIntent.mediaList.size,
+                        AnalyticsParams.HAS_TEXT to feedIntent.content.isNotBlank()
+                    )
+                )
                 createPost(
                     postUser = feedIntent.user,
                     content = feedIntent.content,
@@ -78,10 +94,24 @@ class FeedViewModel(
             }
 
             is FeedIntent.DeletePost -> {
+                analyticsTracker.trackEvent(
+                    AnalyticsEvents.DELETE_POST,
+                    mapOf(
+                        AnalyticsParams.POST_ID to feedIntent.postId,
+                        AnalyticsParams.USER_ID to uiState.value.currentUser.id
+                    )
+                )
                 deletePost(feedIntent.postId)
             }
 
             is FeedIntent.AddComment -> {
+                analyticsTracker.trackEvent(
+                    AnalyticsEvents.ADD_COMMENT,
+                    mapOf(
+                        AnalyticsParams.POST_ID to feedIntent.postId,
+                        AnalyticsParams.USER_ID to feedIntent.user.id
+                    )
+                )
                 addComment(
                     feedIntent.postId,
                     feedIntent.user,
@@ -90,12 +120,26 @@ class FeedViewModel(
             }
 
             is FeedIntent.DeleteComment -> {
+                analyticsTracker.trackEvent(
+                    AnalyticsEvents.DELETE_COMMENT,
+                    mapOf(
+                        AnalyticsParams.COMMENT_ID to feedIntent.comment.id,
+                        AnalyticsParams.USER_ID to uiState.value.currentUser.id
+                    )
+                )
                 deleteComment(
                     feedIntent.comment
                 )
             }
 
             is FeedIntent.LikePost -> {
+                analyticsTracker.trackEvent(
+                    AnalyticsEvents.LIKE_POST,
+                    mapOf(
+                        AnalyticsParams.POST_ID to feedIntent.postId,
+                        AnalyticsParams.USER_ID to feedIntent.user.id
+                    )
+                )
                 likePost(
                     feedIntent.postId,
                     feedIntent.user
@@ -103,6 +147,13 @@ class FeedViewModel(
             }
 
             is FeedIntent.UnlikePost -> {
+                analyticsTracker.trackEvent(
+                    AnalyticsEvents.UNLIKE_POST,
+                    mapOf(
+                        AnalyticsParams.POST_ID to feedIntent.postId,
+                        AnalyticsParams.USER_ID to feedIntent.user.id
+                    )
+                )
                 unlikePost(
                     feedIntent.postId,
                     feedIntent.user
@@ -130,6 +181,10 @@ class FeedViewModel(
             }
 
             is FeedIntent.NavigateTo -> {
+                analyticsTracker.trackEvent(
+                    AnalyticsEvents.ENTER_SCREEN,
+                    mapOf(AnalyticsParams.SCREEN_NAME to feedIntent.screen.name)
+                )
                 _uiState.update {
                     it.copy(currentScreen = feedIntent.screen)
                 }
@@ -222,7 +277,8 @@ class FeedViewModel(
         viewModelScope.launch {
             likePostUseCase(
                 postId = postId,
-                user = user
+                user = user,
+                currentUserId = uiState.value.currentUser.id
             )
         }
     }
@@ -241,7 +297,8 @@ class FeedViewModel(
             addCommentUseCase(
                 postId = postId,
                 user = user,
-                content = content
+                content = content,
+                currentUserId = uiState.value.currentUser.id
             )
             _effect.emit(FeedEffect.ShowMessage("评论成功"))
         }
