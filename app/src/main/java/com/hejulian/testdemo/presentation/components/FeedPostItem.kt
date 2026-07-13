@@ -322,10 +322,13 @@ fun PostMediaGrid(
 
     if (mediaList.size == 1) {
         val media = mediaList.first()
+        var mediaAspectRatio by remember(media) { mutableStateOf<Float?>(null) }
+        val ratio = mediaAspectRatio?.coerceIn(0.5f, 2.0f) ?: 1.0f
+
         Box(
             modifier = modifier
-                .fillMaxWidth(2f / 3f)
-                .aspectRatio(1f)
+                .fillMaxWidth(0.5f)
+                .aspectRatio(ratio)
                 .clip(RoundedCornerShape(4.dp))
                 .background(Color(0xFFF5F5F5))
                 .clickable {
@@ -341,6 +344,12 @@ fun PostMediaGrid(
                     AsyncImage(
                         model = media.url,
                         contentDescription = null,
+                        onSuccess = { state ->
+                            val size = state.painter.intrinsicSize
+                            if (size.width > 0f && size.height > 0f) {
+                                mediaAspectRatio = size.width / size.height
+                            }
+                        },
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -349,7 +358,10 @@ fun PostMediaGrid(
                 VideoThumbnail(
                     videoUrl = media.videoUrl,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    onAspectRatioLoaded = { loadedRatio ->
+                        mediaAspectRatio = loadedRatio
+                    }
                 )
             }
             if (media is FeedMedia.Video) {

@@ -53,13 +53,18 @@ suspend fun getVideoThumbnail(context: android.content.Context, videoUri: String
 fun VideoThumbnail(
     videoUrl: String,
     modifier: Modifier = Modifier,
-    contentScale: ContentScale = ContentScale.Crop
+    contentScale: ContentScale = ContentScale.Crop,
+    onAspectRatioLoaded: ((Float) -> Unit)? = null
 ) {
     val context = LocalContext.current
     var thumbnail by remember(videoUrl) { mutableStateOf<Bitmap?>(null) }
 
     LaunchedEffect(videoUrl) {
-        thumbnail = getVideoThumbnail(context, videoUrl)
+        val bmp = getVideoThumbnail(context, videoUrl)
+        thumbnail = bmp
+        if (bmp != null && bmp.width > 0 && bmp.height > 0) {
+            onAspectRatioLoaded?.invoke(bmp.width.toFloat() / bmp.height.toFloat())
+        }
     }
 
     if (thumbnail != null) {
